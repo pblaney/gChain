@@ -24,4 +24,7 @@ pa object was computed should be given as well.
 returns gChain with seqinfos corresponding to unique seqnames in seq1 and seq2
 and the interval pairs mapping those two sequences
 }
+\author{
+Marcin Imielinski
+}
 

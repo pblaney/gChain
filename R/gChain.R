@@ -514,9 +514,11 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 if (verbose)
                   print(paste('psmart is', pval))
                 if (!is.na(pval) && is.na(pintersect))
-                  hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, pintersect=pval, ...) # pairs of matches
+                                        #                  hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, pintersect=pval, ...) # pairs of matches
+                    hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose,  ...) # pairs of matches
                 else
-                  system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, pintersect = pintersect, ...))
+                    system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, ...))
+#                  system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, pintersect = pintersect, ...))
 
                 s.overlap = .Object@.scale[values(hits)$subject.id]
                 s.abs = abs(s.overlap)
@@ -1026,7 +1028,8 @@ setMethod('[', 'gChain', function(x, i)
 gChain = function(...) new('gChain', ...)
 
 
-#######
+                                        #
+######
 # Basic gChain synthesizers
 #
 # Functions that make gChains to represent spliced mappings, pairwise alignment, multiple sequence alignment,
@@ -1087,6 +1090,7 @@ spChain = function(grl, rev = FALSE)
 #' returns gChain with seqinfos corresponding to unique seqnames in seq1 and seq2
 #' and the interval pairs mapping those two sequences
 #' @export
+#' @author Marcin Imielinski
 paChain = function(seq1, seq2,
   sn1 = NULL, ## character vector of seqnames for seq1, should  be same length as seq1
   sn2 = NULL, ## character vector of seqnames for seq2, should  be same length as seq2
@@ -1455,21 +1459,26 @@ paChain = function(seq1, seq2,
   return(out)
 }
 
-#############################
-# cgChain (ie "CIGAR chain")
-#
-# processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
-# representing edit operations from subject to pattern.
-# ie an insertion corresponds a gap in the subject and deletion corresponds to a gap in the pattern
-# returns a chain that maps subject to pattern (e.g. genome space to read space)
-#
-# Also, "cigar" can be a GRanges or GappedAlignment object with $cigar field where the ranges specify flanking subject coordinates
-# of the aligned pattern (e.g. read).  As by convention, subject coordinates are assumed to NOT contain flanking soft clips.
-# Internal soft clips (if any exist - this would be unconventional use) are treated as insertions.
-# If seqnames ("sn") input not provided then the read seqnames will be the $qname field + IsFirstMateRead part of read flag.
-#
-# Returns a gChain mapping read space to genome space. 
-#############################
+
+#' @name cgChain
+#' @title cgChain
+#' @description
+#' cgChain (ie "CIGAR chain")
+#'
+#' processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
+#' representing edit operations from subject to pattern.
+#' ie an insertion corresponds a gap in the subject and deletion corresponds to a gap in the pattern
+#' returns a chain that maps subject to pattern (e.g. genome space to read space)
+#'
+#' Also, "cigar" can be a GRanges or GappedAlignment object with $cigar field where the ranges specify flanking subject coordinates
+#' of the aligned pattern (e.g. read).  As by convention, subject coordinates are assumed to NOT contain flanking soft clips.
+#' Internal soft clips (if any exist - this would be unconventional use) are treated as insertions.
+#' If seqnames ("sn") input not provided then the read seqnames will be the $qname field + IsFirstMateRead part of read flag.
+#'
+#' Returns a gChain mapping read space to genome space.
+#' 
+#' @export
+#' @author Marcin Imielinski
 cgChain = function(cigar, ## can be character vector or GRanges GAlignment with $cigar and $qname string field)
   sn = NULL,
   verbose = T)
@@ -1660,26 +1669,31 @@ cgChain = function(cigar, ## can be character vector or GRanges GAlignment with 
     
 
 
-###########################
-# multiple sequence alignment chain
-#
-# Takes input GRanges List of interval coordinates corresponding to sequences
-# contributing to alignments in pali. 'pali' is a list of alignment matrices
-# (containing letters from the original sequences and '-', '.' for gaps)
-#
-# 'grl' and 'pali', have the same names (corresponding to the alignment, e.g. a protein domain)
-# Also, this property holds:
-# sapply(pali, nrow) = sapply(grl, length)
-#
-# trim will remove all alignment columns that have only gaps
-#
-# alternatively .. grl can be an XStringSet object with a "names" attribute containing
-# Biostrings (eg AA or DNA) and gap ("-") characters.  Can also be a list of XStringSet objects.
-#
-# if grl is NULL, then it is assumed that the first (last) non gapped character in each MSA alignment entry
-# represents the first (last) item of the sequence 
-#
-###########################
+
+
+#' @name maChain
+#' @title maChain
+#' @description
+#' multiple sequence alignment chain
+#'
+#' Takes input GRanges List of interval coordinates corresponding to sequences
+#' contributing to alignments in pali. 'pali' is a list of alignment matrices
+#' (containing letters from the original sequences and '-', '.' for gaps)
+#'
+#' 'grl' and 'pali', have the same names (corresponding to the alignment, e.g. a protein domain)
+#' Also, this property holds:
+#' sapply(pali, nrow) = sapply(grl, length)
+#'
+#' trim will remove all alignment columns that have only gaps
+#'
+#' alternatively .. grl can be an XStringSet object with a "names" attribute containing
+#' Biostrings (eg AA or DNA) and gap ("-") characters.  Can also be a list of XStringSet objects.
+#'
+#' if grl is NULL, then it is assumed that the first (last) non gapped character in each MSA alignment entry
+#' represents the first (last) item of the sequence 
+#'
+#' @export
+#' @author Marcin Imielinski
 maChain = function(grl = NULL, pali, pad = 0, trim = T,
   trim.thresh = 0 ### number between 0 and 1 specifying what percentage of alignments a position need to be present in in order to be retained in output coordinates
   )
