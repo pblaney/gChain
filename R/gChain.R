@@ -84,7 +84,7 @@ setClass('gChain', representation(.galx = 'GRanges', .galy = 'GRanges', .scale =
 
 suppressWarnings(removeMethod('show', 'gChain')) ## takes care of stupid R 2.15 bug
 setMethod('show', 'gChain', function(object) 
-          cat(sprintf('gChain object with scale(s) %s mapping %s GRanges on sequence of length %s to %s GRanges on sequence of length %s.\n',
+          message(sprintf('gChain object with scale(s) %s mapping %s GRanges on sequence of length %s to %s GRanges on sequence of length %s.\n',
                       paste(unique(object@.scale), collapse = ", "), length(object@.galx), object@.n, length(object@.galy), object@.m)))
 
 #' @name initialize
@@ -437,7 +437,7 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' @param split.grl flag whether or not to split output into GRangesList for GRangesList input
 #' @author Marcin Imielinski
 #' @export
-setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = F, pintersect = NA, ...)
+setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = F, pintersect = NA, by = NULL,  ...)
           {
 
             verbose=FALSE
@@ -461,7 +461,12 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
               {
                 input.grl = T
                 grl.names = names(x);
+                if (is.null(grl.names))
+                    grl.names = as.character(1:length(x))
+                
                 grl.val = values(x);
+                rownames(grl.val) = grl.names
+                
 
                 tmp.df = tryCatch(as.data.frame(x), error = function(e) e)
 
@@ -513,12 +518,19 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 pval <- length(seqlevels(x)) > 50 && length(seqlevels(.Object@.galx)) > 50
                 if (verbose)
                   print(paste('psmart is', pval))
-                if (!is.na(pval) && is.na(pintersect))
-                                        #                  hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, pintersect=pval, ...) # pairs of matches
-                    hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose,  ...) # pairs of matches
+                ## if (!is.na(pval) && is.na(pintersect))
+                ##   hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, ...) # pairs of matches
+                ## else
+
+                if (is.null(by))
+                    system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose,  ...))
                 else
-                    system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, ...))
-#                  system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, pintersect = pintersect, ...))
+                    {
+
+                        tmpx = .Object@.galx
+                        values(tmpx) = values(.Object)
+                        system.time(hits <- gr.findoverlaps(x, tmpx, verbose = verbose, by = by,   ...))
+                    }
 
                 s.overlap = .Object@.scale[values(hits)$subject.id]
                 s.abs = abs(s.overlap)
@@ -580,7 +592,8 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 values(out)$link.id = values(hits)$subject.id
 
                 if (length(out)>0)
-                  out = out[order(values(out)$query.id, values(out)$query.start)]
+                    out = out[order(values(out)$query.id, values(out)$query.start)]
+
               }
             else
               out = GRanges(seqlengths = seqlengths(.Object@.galy))
@@ -665,27 +678,29 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 if (input.grl)
                   {
                     if (length(out)>0)
-                      {
-#                        list.id = unique(values(out)$list.id)
-                        out = split(out, values(out)$list.id)
+                        {
+                            out = split(out, values(out)$list.id)
+                            
+                            if (!is.null(grl.names))
+                                {
+                                    ix = match(names(out), grl.names)
+                                    names(out) = grl.names[ix]
+                                }                        
+                            else
+                                {
+                                    ix = names(out);                                    
+                                }
 
-                        if (!is.null(grl.names))
-                          ix = match(names(out), grl.names)
-                        else
-                          ix = names(out);
-
-                        names(out) = grl.names[ix]
-                        
-                        if (ncol(grl.val)>0)
-                          values(out) = grl.val[ix, ,drop = FALSE];
-
-                        if (split.grl)
-                          out = grl.split(out)
-                      }
+                            if (ncol(grl.val)>0)
+                                values(out) = grl.val[ix, ,drop = FALSE];
+                            
+                            if (split.grl)
+                                out = grl.split(out)
+                        }
                     else
-                      out = gr.fix(GRangesList(), out)
+                        out = gr.fix(GRangesList(), out)
                   }
-              }
+            }
             
             ## output trackData if trackData was the input
             if (!is.null(x.track))
@@ -1271,7 +1286,7 @@ paChain = function(seq1, seq2,
       
   if (verbose) {
     time <- proc.time()
-    cat('Starting alignment\n')
+    message('Starting alignment\n')
   }
   
   
@@ -1305,7 +1320,7 @@ paChain = function(seq1, seq2,
   
   if (verbose) {
     print(proc.time() - time)
-    cat('Finished aligning\nPrepping chain ..\n')
+    message('Finished aligning\nPrepping chain ..\n')
     time <- proc.time()
   }
 
@@ -1409,7 +1424,7 @@ paChain = function(seq1, seq2,
   
   if (verbose) {
     print(proc.time() - time)
-    cat('Prepped chain\nMultiplying\n')
+    message('Prepped chain\nMultiplying\n')
     time <- proc.time()
   }
 
@@ -1421,11 +1436,11 @@ paChain = function(seq1, seq2,
 
   if (verbose) {
     print(proc.time() - time)
-    cat('Finalizing chain\n')
+    message('Finalizing chain\n')
     time <- proc.time()
   }
   if (verbose & both.strands)
-    cat('Strand collapsing\n')
+    message('Strand collapsing\n')
 
   if (both.strands)
     {
@@ -1441,7 +1456,7 @@ paChain = function(seq1, seq2,
   if (!is.null(gr1))
     {
       if (verbose)
-        cat('Lifting through gr1\n')
+        message('Lifting through gr1\n')
       si1 = seqinfo2gr(links(out)$x)
       out = out * gChain(gr1[seqnames(si1)], si1)
     }
@@ -1450,7 +1465,7 @@ paChain = function(seq1, seq2,
   if (!is.null(gr2))
     {
       if (verbose)
-        cat('Lifting through gr1\n')
+        message('Lifting through gr1\n')
       si2 = seqinfo2gr(links(out)$x)
       out = gChain(si2, gr1[seqnames(si1)]) * out
     }
@@ -1542,42 +1557,12 @@ cgChain = function(cigar, ## can be character vector or GRanges GAlignment with 
       cig.names = as.character(1:length(cigar))
 
     if (verbose)
-      cat('Parsing CIGARs\n')
+      message('Parsing CIGARs\n')
 
     #suppressWarnings(cigar.s <- splitCigar(cigar))
     #suppressWarnings(cigar.s <- explodeCigarOpLengths(cigar))
     cigar.m <- explodeCigarOps(cigar)
     cigar.l <- explodeCigarOpLengths(cigar)
-
-##     cigar.ul <- unlist(cigar.s)
-##     cigl.1   <- sapply(cigar.s, function(y) length(y[[1]]))
-##     cigl.2   <- sapply(cigar.s, function(y) length(y[[2]]))    
-##     isrev2   <- rep(as.logical(gr$strand=='-'), each=2)
-##     cigl.12  <- as.vector(t(cbind(cigl.1, cigl.2))) # interleave 1 and 2
-##     dt <- data.table(group=rep(seq_along(cigl.12), cigl.12), isrev=rep(isrev2, cigl.12),
-##                      nid=seq(-1, -sum(cigl.12)), oot=rep(rep(c(1,2), length(cigl.12)/2), cigl.12),
-##                      val=cigar.ul, cignames=rep(cig.names, cigl.1+cigl.2))
-##     dt$nid[!dt$isrev] <- 0
-##     dt <- dt[, ord := order(dt$group, dt$nid)]
-##     dt <- dt[, val := cigar.ul[dt$ord]]
-##     dt <- dt[, nid := NULL] 
-##     D = as.numeric(charToRaw('D'));
-##     S = as.numeric(charToRaw('S'));
-##     I = as.numeric(charToRaw('I'));
-
-##     dt <- dt[, isd := val == D]
-##     dt <- dt[, iss := val == S]
-##     dt <- dt[, isi := val == I]
-##     dt <- dt[, isis:= isi | iss]
-
-##     dt$noDlen  <- rep(dt[dt$oot==2, sum(val[!isd ]), by=group]$V1, cigl.1 + cigl.2)
-##     dt$noISlen <- rep(dt[dt$oot==2, sum(val[!isis]), by=group]$V1, cigl.1 + cigl.2)
-    
-##     sinfo.ali <- Seqinfo(seqlengths = dt[dt$oot==2, sum(val),by=group]$V1, seqnames=as.character(seq_along(cigar.s)))
-##     sl.pat <- dt[, max(noDlen, na.rm=TRUE), by=cignames]$V1 #vaggregate(sumr2, by=list(cig.names), FUN=max, na.rm=T))
-##     names(sl.pat) <- unique(dt$cignames)
-##     sinfo.subj <- Seqinfo(seqlengths = dt[oot==2, sum(val[noISlen]), by=group]$V1, seqnames=as.character(seq_along(cigar)))
-
     
     ## reverse CIGARs for ranges mapped to the negative strand
     if (!is.null(gr))
@@ -1597,77 +1582,79 @@ cgChain = function(cigar, ## can be character vector or GRanges GAlignment with 
     H = 'H'
     I = 'I'
     
-    #sinfo.ali <- Seqinfo(seqlengths = sapply(cigar.s, function(x) sum(x[[2]])), seqnames = as.character(1:length(cigar.s)))
-    sinfo.ali <- Seqinfo(seqlengths = sapply(cigar.l, sum), seqnames = as.character(1:length(cigar.l))) ## 3.1
-    #sl.pat    <- vaggregate(sapply(cigar.s, function(x) sum(x[[2]][x[[1]] != D])), by = list(cig.names), FUN = max, na.rm = T)
-    isnotd = sapply(cigar.m, function(x) x != D) ## 3.1
-    ##### CRASHED 151208 JEREMIAH ## NEW VERSOIN LINE BELWO  sl.pat    <- vaggregate(sapply(seq_along(isnotd), function(x) sum(cigar.l[[x]][isnotd[[x]]])), by = list(cig.names), FUN = max, na.rm = T) ## 3.1
-    sl.pat    <- vaggregate(sapply(seq(length(isnotd)), function(x) sum(cigar.l[[x]][isnotd[[x]]])), by = list(cig.names), FUN = max, na.rm = T) ## 3.1    
-    
-    #sinfo.subj <- Seqinfo(seqlengths = sapply(cigar.s, function(x) sum(x[[2]][!(x[[1]] %in% c(I, S))])), seqnames = as.character(1:length(cigar)))
-    isnotsi = sapply(cigar.m, function(x) !(x %in% c(I,S,H))) ## 3.1
-    sinfo.subj <- Seqinfo(seqlengths = sapply(seq(length(isnotsi)), function(x) sum(cigar.l[[x]][isnotsi[[x]]])), seqnames = as.character(1:length(cigar))) # 3.1
-    sinfo.pat <- Seqinfo(seqlengths = sl.pat, seqnames = names(sl.pat))        
+    sinfo.cigar <- Seqinfo(seqlengths = sapply(cigar.l, sum), seqnames = as.character(1:length(cigar.l))) ## 3.1
+    isnotd = lapply(cigar.m, function(x) x != D) ## 3.1
+    sl.pat    <- vaggregate(sapply(seq(length(isnotd)), function(x) sum(cigar.l[[x]][isnotd[[x]]])), by = list(cig.names), FUN = max, na.rm = T) ## 3.1
+       
+    isnotsi = lapply(cigar.m, function(x) !(x %in% c(I,S,H))) ## 3.1
+    sinfo.ref <- Seqinfo(seqlengths = sapply(seq(length(isnotsi)), function(x) sum(cigar.l[[x]][isnotsi[[x]]])), seqnames = as.character(1:length(cigar))) # 3.1
+    sinfo.template <- Seqinfo(seqlengths = sl.pat, seqnames = names(sl.pat))        
 
-    ## digest cigar some more
-    #cig.id    <- unlist(lapply(1:length(cigar.s), function(x) rep(x, length(cigar.s[[x]][[1]]))))
+    ## digest / unlist cigar some more
     cig.id    <- unlist(lapply(seq_along(cigar.l), function(x) rep(x, length(cigar.l[[x]]))))
-    cig.type  <- unlist(cigar.m) #unlist(lapply(cigar.s, function(x) x[[1]]))
-    cig.wid   <- unlist(cigar.l) #unlist(lapply(cigar.s, function(x) x[[2]]))
+    cig.type  <- unlist(cigar.m)
+    cig.wid   <- unlist(cigar.l) 
     cig.start <- levapply(cig.wid, cig.id, function(x) if (length(x)>1) cumsum(c(1, x[1:(length(x)-1)])) else return(1))
 
     if (verbose)
-      cat('Preparing gChains\n')
+      message('Preparing gChains\n')    
 
-    ## prep ranges corresponding to insertion and deletion gaps in alignment space
-    ix = cig.type == D
-
-    if (any(ix))
-      gr.del = GRanges(cig.id[ix], IRanges(cig.start[ix], width = cig.wid[ix]), seqlengths = seqlengths(sinfo.ali), strand = '+')
-    else
-      gr.del = GRanges(seqlengths = seqlengths(sinfo.ali))
-
-    ix = cig.type %in% c(I,S,H)
-
-    if (any(ix))
-      gr.ins = GRanges(cig.id[ix], IRanges(cig.start[ix], width = cig.wid[ix]), seqlengths = seqlengths(sinfo.ali), strand = '+')
-    else
-      gr.ins = GRanges(seqlengths = seqlengths(sinfo.ali))
-
-    sia <- seqinfo2gr(sinfo.ali)
-    pat.mapped <- setdiff(sia, gr.del) ## pattern maps to all non-deleted positions in the alignments
-
-
-    ## alignment = length(I) + length(D) + length(S) + length(H) + length(M) sequence
-    ## pattern = molecule templates
-    ## subject = reference loci
-                                        #    sp  <- split(pat.mapped, as.character(1:length(cigar))[as.numeric(as.character(seqnames(pat.mapped)))])
-    sp  <- split(pat.mapped, seqnames(pat.mapped))
-    tmp <- spChain(sp)
-    ali2pat <- gChain(links(tmp)$x,   GRanges(cig.names[as.numeric(as.character(seqnames(links(tmp)$y)))], ranges(links(tmp)$y), strand = '+', seqlengths = seqlengths(sinfo.pat)))
-
-    subj.mapped <- setdiff(sia, gr.ins) ## subject maps to all non-inserted positions in the alignments
-    tmp = spChain(split(subj.mapped, seqnames(subj.mapped)))
-    ali2subj = gChain(links(tmp)$x, GRanges(seqnames(links(tmp)$y),
-      ranges(links(tmp)$y), strand = '+', seqlengths = seqlengths(sinfo.subj)))
-
-    if (verbose)
-      cat('Multiplying gChains\n')
-
-    out <- ali2pat*t(ali2subj)
-
-    if (verbose)
-      cat('Finalizing gChain\n')
-
+    ##
+    ## now we need to map template --> CiGARs --> reference coordinates
+    ## by building chains and multiplying them 
+    ##
     
+    ## prep ranges corresponding to insertion and deletion gaps in alignment space
+    ## by only taking into account gaps we should  create a cleaner chain, i.e. with fewer
+    ## segments
+
+    ## D are gaps in the template        
+    ix = cig.type == D
+    if (any(ix)) ## populate with template gaps
+      gr.del = GRanges(cig.id[ix], IRanges(cig.start[ix], width = cig.wid[ix]), seqlengths = seqlengths(sinfo.cigar), strand = '+')
+    else ## otherwise empty granges
+      gr.del = GRanges(seqlengths = seqlengths(sinfo.cigar))
+
+    ## ISH are gaps in the reference
+    ix = cig.type %in% c(I,S,H)
+    if (any(ix)) ## populate with reference gaps
+        gr.ins = GRanges(cig.id[ix], IRanges(cig.start[ix], width = cig.wid[ix]), seqlengths = seqlengths(sinfo.cigar), strand = '+')
+    else ## empty granges
+        gr.ins = GRanges(seqlengths = seqlengths(sinfo.cigar))
+        
+    sigr.cigar <- seqinfo2gr(sinfo.cigar) ## coordinate space of the CIGAR
+    
+    ## cigar2template maps cigar to template
+    template.mapped <- setdiff(sigr.cigar, gr.del) ## template maps to all non-deleted positions in the CIGAR
+    sp  <- split(template.mapped, seqnames(template.mapped))
+    tmp <- spChain(sp)
+    cigar2template <- gChain(links(tmp)$x,  GRanges(cig.names[as.numeric(as.character(seqnames(links(tmp)$y)))], ranges(links(tmp)$y), strand = '+', seqlengths = seqlengths(sinfo.template)))
+
+    ## cigar2ref maps cigar to reference
+    ref.mapped <- setdiff(sigr.cigar, gr.ins) ## ref maps to all non-inserted and non-clipped positions in the CIGAR
+    tmp = spChain(split(ref.mapped, seqnames(ref.mapped)))
+    cigar2ref = gChain(links(tmp)$x, GRanges(seqnames(links(tmp)$y),
+      ranges(links(tmp)$y), strand = '+', seqlengths = seqlengths(sinfo.ref)))
+    
+    if (verbose)
+      message('Multiplying gChains\n')
+    
+    out <- cigar2template*t(cigar2ref)
+
+    if (verbose)
+      message('Finalizing gChain\n')
+
+    ## if CIGAR provided as GRange on "real genome" then lift sinfo.ref onto the genome
+    ## keepin gtrack of strand 
     if (!is.null(gr)) {
-        out = out * gChain(gr, GRanges(seqnames(sinfo.subj), IRanges(1, width = width(gr)), strand = '+'), val = as.data.frame(values(gr)))
+
+        ## harmonize gr with cigar .. sometimes right side not consistent
+        width(gr) = sapply(1:length(cigar.l), function(x) sum(cigar.l[[x]][cigar.m[[x]] %in% c("D", "M")]))        
+        out = out * gChain(gr, GRanges(seqnames(sinfo.ref), IRanges(1, width = width(gr)), strand = '+'), val = as.data.frame(values(gr)))
     }
     
     return(t(out))
 }
-    
-
 
 
 
@@ -1768,13 +1755,17 @@ maChain = function(grl = NULL, pali, pad = 0, trim = T,
       return(expand(gChain(intA, intB), pad))        
   }
 
-#############################
-# Transcript chain
-#
-# Takes a GRangesList on genomic coordinates (ie exons comprising transcripts)
-# and creates a gChain representing mapping onto transcript (or translated protein) coordinates
-#
-#############################
+
+#' @name txChain
+#' @title txChain
+#' @description
+#' Transcript chain
+#'
+#' Takes a GRangesList on genomic coordinates (ie exons comprising transcripts)
+#' and creates a gChain representing mapping onto transcript (or translated protein) coordinates
+#'
+#' @author Marcin Imielinski
+#' @export
 txChain = function(grl, txname = NULL, translate = F, exonFrame.field = 'exon_frame',
   val = NULL ## data frame of nrow = length(grl) specifying val to add to chain
   )
@@ -2487,7 +2478,7 @@ bfb = function(chr, numcycles = 5, w = 0.2, wd = 0.4, end = TRUE, si = seqinfo(k
     for (i in 1:numcycles)
       {
         if (verbose)
-          cat('Cycle ', i, ' chrom width', seqlengths(seqinfo(gc)[[2]])[chr]/1e6, ' MB\n')
+          message('Cycle ', i, ' chrom width', seqlengths(seqinfo(gc)[[2]])[chr]/1e6, ' MB\n')
         si1 = seqinfo2gr(seqinfo(gc)[[2]])
         si.this = si1[chr]
         si1.other = si1[setdiff(seqlevels(si1), chr)]        
@@ -2832,3 +2823,59 @@ grl.split = function(grl, seqname = TRUE, strand = TRUE,
     return(out)
 }
 
+
+vaggregate = function(...)
+  {
+    out = aggregate(...);
+    return(structure(out[,ncol(out)], names = do.call(paste, lapply(names(out)[1:(ncol(out)-1)], function(x) out[,x]))))
+  }
+
+
+levapply = function(x, by, FUN = 'order')
+  {
+    if (!is.list(by))
+      by = list(by)
+
+    f = factor(do.call('paste', c(list(sep = '|'), by)))
+    ixl = split(1:length(x), f);
+    ixv = lapply(ixl, function(y) x[y])
+    res = structure(unlist(lapply(ixv, FUN)), names = unlist(ixl))
+    out = rep(NA, length(x))
+    out[as.numeric(names(res))] = res;
+    return(out)
+  }
+
+seqinfo2gr <- function(si, strip.empty = FALSE)
+{
+    if (is(si, 'vector')) ## treat si as seqlengths if vector
+        si = Seqinfo(seqlengths = si, seqnames = names(si))
+    else if (!is(si, 'Seqinfo'))
+        si = seqinfo(si)
+
+    sl = seqlengths(si)
+    sn = seqnames(si);
+    sl[is.na(sl)] = 0;
+
+    if (strip.empty)
+    {
+        sn = sn[sl!=0];
+        sl = sl[sl!=0];
+    }
+
+    sigr = GRanges(sn, IRanges(rep(1, length(sl)), width = sl), seqlengths = seqlengths(si), strand = rep('+', length(sl)))
+    names(sigr) = sn;
+
+    return(sigr)
+}
+
+
+dedup = function(x, suffix = '.')
+{
+  dup = duplicated(x);
+  udup = setdiff(unique(x[dup]), NA)
+  udup.ix = lapply(udup, function(y) which(x==y))
+  udup.suffices = lapply(udup.ix, function(y) c('', paste(suffix, 2:length(y), sep = '')))
+  out = x;
+  out[unlist(udup.ix)] = paste(out[unlist(udup.ix)], unlist(udup.suffices), sep = '');
+  return(out)  
+}

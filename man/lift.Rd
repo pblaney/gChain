@@ -6,7 +6,7 @@
 \title{lift}
 \usage{
 \S4method{lift}{gChain}(.Object, x, format = "GRanges", split.grl = F,
-  pintersect = NA, ...)
+  pintersect = NA, by = NULL, ...)
 }
 \arguments{
 \item{x}{GRanges to lift through this chain}
