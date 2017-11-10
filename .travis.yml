@@ -20,7 +20,6 @@ install:
 script: 
   - R CMD build .
   - R CMD check *tar.gz
-  - cat /home/travis/build/mskilab/gUtils/gUtils.Rcheck/00check.log 
 
 after_failure:
   - Rscript -e 'readLines("/home/travis/build/mskilab/gUtils/gUtils.Rcheck/00check.log")'
