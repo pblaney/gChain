@@ -15,6 +15,7 @@ before_install:
 install:
   - ./travis-tool.sh install_bioc_deps
   - ./travis-tool.sh install_deps
+  - ./travis-tool.sh install_github mskilab/gUtils
  
 script: 
   - R CMD build .
