@@ -25,4 +25,3 @@ one might want to take only the longest match, and discard secondary alignments.
 \note{
 This is a bit of a hack, as there are better ways to remove dupes before this step
 }
-

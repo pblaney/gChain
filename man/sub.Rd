@@ -10,4 +10,3 @@
 \description{
 subsetting links in a gChain, e.g. using features of the links metadata
 }
-

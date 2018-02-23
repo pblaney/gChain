@@ -22,4 +22,3 @@ larger space, i.e. if abs(scale)<1 then y is the smaller space, if abs(scale)>1,
 if space = Inf, then the Chain will map the entire sequence length (ie the whole chromosome)
 (of x or y, whichever is the largest for the given interval pair)
 }
-

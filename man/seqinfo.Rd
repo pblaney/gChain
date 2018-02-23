@@ -10,4 +10,3 @@
 \description{
 return seqinfo for gChain
 }
-

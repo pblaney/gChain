@@ -5,10 +5,9 @@
 \alias{c}
 \title{c}
 \usage{
-\S4method{c}{gChain}(x, ..., recursive = FALSE)
+\S4method{c}{gChain}(x, ...)
 }
 \description{
 concatenate gChains, i.e. concatenate their links
 they must have the same domain and range genome
 }
-

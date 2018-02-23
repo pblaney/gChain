@@ -38,4 +38,3 @@ remaining args passed on to gr.findoverlaps
 \author{
 Marcin Imielinski
 }
-

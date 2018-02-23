@@ -138,9 +138,9 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
               y = y[keep]
             }
             
-            strand(x)[which(strand(x)=='*')] = '+'
-            strand(y)[which(strand(y)=='*')] = '+'
-
+            strand(x)[which(as.logical(strand(x)=='*'))] = '+'                                                                                                                  
+            strand(y)[which(as.logical(strand(y)=='*'))] = '+'   
+            
             if (ncol(mcols(x)))
               .Object@.galx = x[, c()]
             else

@@ -15,4 +15,3 @@ gchain initialize
 if only x (or y) GRanges is given will make "identity chain"
 if x (or y) is given as a seqinfo, then will make "empty chain"
 }
-

@@ -3,6 +3,7 @@
 \docType{methods}
 \name{gMultiply}
 \alias{gMultiply}
+\alias{gMultiply}
 \title{gMultiply}
 \usage{
 gMultiply(e1, e2, pintersect = NA)
@@ -17,4 +18,3 @@ if e2 lifts from genome A to genome B
 and e1 lifts from genome B to genome C
 then e1 * e2 = lifts from genome A to genome C
 }
-

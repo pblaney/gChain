@@ -9,4 +9,3 @@ genomes(.Object, ...)
 \description{
 return seqinfos associated with domain and range genome of gChain
 }
-

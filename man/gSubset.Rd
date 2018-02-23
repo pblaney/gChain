@@ -24,4 +24,3 @@ Subset a gChain
 Make smaller gChain that contains only the seqnames
 given by xnames and/or ynames.
 }
-

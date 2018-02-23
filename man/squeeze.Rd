@@ -19,4 +19,3 @@ start(squeeze(ir)[k]) = end(squeeze(ir)[k-1])+1 for all k>1, and start(squeeze(i
 optional extra input "gap" yields following output: width(squeeze(ir, gap)) = width(ir), end(ir[length(ir)]) = sum(width(ir)) + gap*(length(ir)-1) + 1
 start(squeeze(ir, gap)[k]) = end(squeeze(ir, gap)[k-1])+1+gap for all k>1, and start(squeeze(ir, gap))[1] = 1
 }
-

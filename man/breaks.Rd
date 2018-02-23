@@ -16,4 +16,3 @@ that are contiguous in y that were not contiguous in x.
 breaks are only defined in one direction (ie x to y)
 (if you want to do reverse then just "transpose" the chain, or use rev = TRUE)
 }
-

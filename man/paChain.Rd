@@ -27,4 +27,3 @@ and the interval pairs mapping those two sequences
 \author{
 Marcin Imielinski
 }
-

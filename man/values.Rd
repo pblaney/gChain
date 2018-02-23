@@ -3,6 +3,8 @@
 \docType{methods}
 \name{values}
 \alias{values}
+\alias{values}
+\alias{values}
 \title{values}
 \usage{
 \S4method{values}{gChain}(x)
@@ -18,4 +20,3 @@ get scale of gChain
 
 get pads of gChain
 }
-

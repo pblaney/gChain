@@ -10,4 +10,3 @@
 \description{
 "transpose of chain" is flipping x and y variables (i.e. inverting the mapping)
 }
-

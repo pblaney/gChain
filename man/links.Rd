@@ -7,4 +7,3 @@ returns links associated with chain}
 \usage{
 links(.Object, ...)
 }
-

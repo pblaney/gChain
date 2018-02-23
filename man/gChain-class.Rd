@@ -40,4 +40,3 @@ ie padding always refers to genome with ranges that are being contracted in the 
 These interval pairs won't have widths that are integer multiples, however (for scales>1) the  (width(y)+pad.left+pad.right)/width(x) 
 will be an integer, or (for scales<1)  (width(x)+pad.left+pad.right)/width(y) will be an integer.
 }
-
