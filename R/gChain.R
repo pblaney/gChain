@@ -98,8 +98,8 @@ setMethod('show', 'gChain', function(object)
 #' if x (or y) is given as a seqinfo, then will make "empty chain"
 #' @export
 setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame())
-          {
-            .Object = callNextMethod()
+{
+            #.Object = callNextMethod()
             if (length(x)>0 & length(y)>0 & length(x) != length(y))
               stop('x and y GRanges must be of the same length')
 
@@ -138,8 +138,8 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
               y = y[keep]
             }
             
-            strand(x)[which(strand(x)=='*')] = '+'
-            strand(y)[which(strand(y)=='*')] = '+'
+            strand(x)[which(as.logical(strand(x)=='*'))] = '+'
+            strand(y)[which(as.logical(strand(y)=='*'))] = '+'
 
             if (ncol(mcols(x)))
               .Object@.galx = x[, c()]
@@ -148,7 +148,8 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
             if (ncol(mcols(y)))
               .Object@.galy = y[, c()]
             else
-              .Object@.galy <- y
+                .Object@.galy <- y
+            
             .Object@.n = sum(as.numeric(seqlengths(x)), na.rm = T);
             .Object@.m = sum(as.numeric(seqlengths(y)), na.rm = T);
             .Object@.pad.left = as.integer(cbind(1:length(x), pad.left)[,2]) 
@@ -598,7 +599,7 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                   chr = NA, pos = NA, stringsAsFactors = F)
                 
                 ## identify (flattened) x indices that map to at least one y index
-                mapped.ix = ir2vec(shift(IRanges(values(out)$query.start, values(out)$query.end), query.offsets), each = x.expand);
+                mapped.ix = ir2vec(IRanges::shift(IRanges(values(out)$query.start, values(out)$query.end), query.offsets), each = x.expand);
                 unmapped.ix = setdiff(1:query.length, mapped.ix)
                 
                 ## look up y vals corresponding to mapped positions
@@ -832,10 +833,10 @@ setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x =
                 seqlengths(x@.galx) = pmax(seqlengths(x@.galx), new.slen.x[seqlevels(x@.galx)])
 
                 if (shift.x)
-                  x@.galx = shift(x@.galx, 1/abs.scale*(right.space))
+                  x@.galx = GenomicRanges::shift(x@.galx, 1/abs.scale*(right.space))
                 
                 if (shift.y)
-                  x@.galy = shift(x@.galy, right.space)
+                  x@.galy = GenomicRanges::shift(x@.galy, right.space)
 
                 x@.galx = gr.pad(x@.galx, cbind((1/abs.scale)*left.space, (1/abs.scale)*right.space))                
                 x@.galy = gr.pad(x@.galy, cbind((left.space), (right.space)))
@@ -864,10 +865,10 @@ setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x =
                 seqlengths(x@.galy) = pmax(seqlengths(x@.galy), new.slen.y[seqlevels(x@.galy)])
                 
                 if (shift.x)
-                  x@.galx = shift(x@.galx, right.space)
+                  x@.galx = GenomicRanges::shift(x@.galx, right.space)
                 
                 if (shift.y)
-                  x@.galy = shift(x@.galy, abs.scale*right.space)
+                  x@.galy = GenomicRanges::shift(x@.galy, abs.scale*right.space)
                 
                 x@.galx = gr.pad(x@.galx, cbind(left.space, right.space))
                 x@.galy = gr.pad(x@.galy, cbind(abs.scale*(left.space), abs.scale*(right.space)))
@@ -938,7 +939,7 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE)
             if (length(x@.galx)==0)
               return(GRangesList())
             
-            seed = suppressWarnings(c(shift(gr.start(x@.galy,2)-1), shift(gr.end(x@.galy, 2), 1)))
+            seed = suppressWarnings(c(GenomicRanges::shift(gr.start(x@.galy,2)-1), GenomicRanges::shift(gr.end(x@.galy, 2), 1)))
             strand(seed) = '+'
 
             # only lift junctions that have not fallen over the edge (ie at the beginning or end of a seq)
@@ -973,11 +974,11 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE)
               }));
 
             keep = (end(seed.l)[ij[,2]] - start(seed.l)[ij[,1]])!=1 | as.logical(seqnames(seed.l)[ij[,2]] != seqnames(seed.l)[ij[,1]])
-            ij = ij[keep, ]
+            ij = ij[keep, , drop = FALSE]
 
             ## we flip the first range in the pair so it points backward on x
             ## while the second range points forward (towards the next segment on x)
-            tmp.out = c(gr.flip(seed.l[ij[,1]]), seed.l[ij[,2]])
+            tmp.out = c(gr.flipstrand(seed.l[ij[,1]]), seed.l[ij[,2]])
             bk.id = rep(1:nrow(ij), 2)
             out = split(tmp.out, bk.id)            
             
@@ -1055,22 +1056,26 @@ spChain = function(grl, rev = FALSE)
   names(grl) = dedup(names(grl), ' copy ');
   values(grl)$rev = rev;
   
-  gr.df = as.data.frame(grl)
-  intA = GRanges(as.character(gr.df$seqnames), IRanges(gr.df$start, gr.df$end), gr.df$strand, seqlengths = seqlengths(grl))
-  start.A = gr.df$start
-  end.A = gr.df$end
-  #chr.B = gr.df$element
-  chr.B = as.character(gr.df$group) #3.1
-  str.tmp = structure(c('+', '-')[1+values(grl)$rev], names = names(grl))
-  start.B = levapply(gr.df$width, chr.B, function(w) if (length(w)==1) 1 else cumsum(c(1, w[-length(w)])))
-  end.B = start.B + gr.df$width-1
-  str = str.tmp[chr.B]
-                                        #seqlengths = vaggregate(width ~ element, data = gr.df, sum)
-  seqlengths = vaggregate(width ~ group, data = gr.df, base::sum) #3.1
-  intB = GRanges(chr.B, IRanges(start.B, end.B), seqlengths = seqlengths, strand = str)
+  gr.dt = as.data.table(grl)
+  intA = GRanges(as.character(gr.dt$seqnames), IRanges(gr.dt$start, gr.dt$end), gr.dt$strand, seqlengths = seqlengths(grl))
+
+  out.dt = gr.dt[, .(
+      chr.A = seqnames,
+      start.A = start,
+      end.A = end,
+      width,
+      chr.B = group_name,
+      str = ifelse(rep(values(grl)$rev, elementNROWS(grl)), '-', '+')
+      )]
+  
+  out.dt[, start.B := if (length(width)==1) 1 else cumsum(c(1, width[-length(width)])), by = chr.B]
+  out.dt[, end.B := start.B + width-1]
+
+  seqlengths = gr.dt[, sum(width), by = group_name][, structure(V1, names = group_name)]
+  intB = GRanges(out.dt$chr.B, IRanges(out.dt$start.B, out.dt$end.B), seqlengths = seqlengths, strand = out.dt$str)
   
   return(gChain(intA, intB))
-}  
+} 
 
 
 #' @name paChain
@@ -1376,7 +1381,7 @@ paChain = function(seq1, seq2,
       ## each seqname represents a different index of pa
       gr.del = GRanges(as.character(del.ix), unlist(deletion(pa)), seqlengths = seqlengths(sinfo.ali), strand = '+')
       ## FIX to Biostrings pairwise alignment bug / issue
-      gr.del = shift(gr.del, levapply(width(gr.del), as.character(seqnames(gr.del)), function(x) if (length(x)>1) cumsum(c(0, x[1:(length(x)-1)])) else return(0)))
+      gr.del = GenomicRanges::shift(gr.del, levapply(width(gr.del), as.character(seqnames(gr.del)), function(x) if (length(x)>1) cumsum(c(0, x[1:(length(x)-1)])) else return(0)))
     }
   else
     gr.del = GRanges(seqlengths = seqlengths(sinfo.ali)) 
@@ -1384,7 +1389,7 @@ paChain = function(seq1, seq2,
   tmp = spChain(split(pat.mapped, seqnames(pat.mapped))) ## map to these to pattern coordinates
   al.ix = as.numeric(as.character(seqnames(links(tmp)$y)))
   ali2pat = gChain(links(tmp)$x, GRanges(sn1[keep.ix[al.ix]], ## make sure to shift to account for start gap
-            ranges = shift(ranges(links(tmp)$y), start(Biostrings::pattern(pa[al.ix]))-1), strand = '+', seqlengths = seqlengths(sinfo1)))
+            ranges = GenomicRanges::shift(ranges(links(tmp)$y), start(Biostrings::pattern(pa[al.ix]))-1), strand = '+', seqlengths = seqlengths(sinfo1)))
   
   # insertions specify subject gaps in alignment coordinates
   ins.len = elementLengths(insertion(pa))
@@ -1395,7 +1400,7 @@ paChain = function(seq1, seq2,
       ## each seqname represents a different index of pa
       gr.ins = GRanges(as.character(ins.ix), unlist(insertion(pa)), seqlengths = seqlengths(sinfo.ali), strand = '+')
       ## FIX to Biostrings pairwise alignment bug
-      gr.ins = shift(gr.ins, levapply(width(gr.ins), as.character(seqnames(gr.ins)), function(x) if (length(x)>1) cumsum(c(0, x[1:(length(x)-1)])) else return(0)))
+      gr.ins = GenomicRanges::shift(gr.ins, levapply(width(gr.ins), as.character(seqnames(gr.ins)), function(x) if (length(x)>1) cumsum(c(0, x[1:(length(x)-1)])) else return(0)))
     }
   else
     gr.ins = GRanges(seqlengths = seqlengths(sinfo.ali))
@@ -1404,7 +1409,7 @@ paChain = function(seq1, seq2,
   tmp = spChain(split(subj.mapped, seqnames(subj.mapped))) ## map these to subject coordinates
   al.ix = as.numeric(as.character((seqnames(links(tmp)$y)))) ### have to do as.numeric(as.vector( here .. because of weird factor issues
   ali2subj = gChain(links(tmp)$x, GRanges(sn2[keep.ix[al.ix]],
-    ranges = shift(ranges(links(tmp)$y), start(subject(pa[al.ix]))-1),  ## make sure to shift to account for start gap
+    ranges = GenomicRanges::shift(ranges(links(tmp)$y), start(subject(pa[al.ix]))-1),  ## make sure to shift to account for start gap
     strand = '+', seqlengths = seqlengths(sinfo2)), val = data.frame(score = score(pa[as.numeric(as.character(seqnames(subj.mapped)))])))
   
   if (verbose) {
@@ -1758,7 +1763,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = T,
     pali.ix = unlist(lapply(1:length(pali.irl), function(x) rep(x, sum(sapply(pali.irl[[x]], length)))))
 
     gr = unlist(grl);    
-    intA = GRanges(seqnames(gr)[gr.ix], shift(grl.ir, start(gr)[gr.ix]-1),
+    intA = GRanges(seqnames(gr)[gr.ix], IRanges::shift(grl.ir, start(gr)[gr.ix]-1),
       strand = strand(gr)[gr.ix], seqlengths = seqlengths(gr));
     intB = GRanges(names(pali)[pali.ix], do.call('c', pali.ir), strand = '+', seqlengths = sapply(pali, ncol))
 
@@ -2251,12 +2256,12 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
     
     values(event)$retain = retain    
     bp1 = event[-length(event)]
-    bp2 = gr.flip(event[-1])
+    bp2 = gr.flipstrand(event[-1])
 
     if (closed)
       {
         bp1 = c(bp1, event[length(event)])
-        bp2 = c(bp2, gr.flip(event[1]))
+        bp2 = c(bp2, gr.flipstrand(event[1]))
       }
         
     sgn1 = c('-'=-1, '+'=1)[as.character(strand(bp1))]
@@ -2501,14 +2506,14 @@ bfb = function(chr, numcycles = 5, w = 0.2, wd = 0.4, end = TRUE, si = seqinfo(k
           {
             bp = pmax(1, width(si.this)-runif(1)*W)
             inv = GRanges(chr, IRanges(1, bp), strand = '+', seqlengths = seqlengths(si1))
-            tmp.gr = c(inv, gr.flip(inv), si1.other);
+            tmp.gr = c(inv, gr.flipstrand(inv), si1.other);
             gc1 = gChain(c(inv, inv, si1.other), gr.refactor(tmp.gr, seqnames(tmp.gr)), val = data.frame(flag = 1:length(tmp.gr) %in% 1:2))
           }
         else
           {
             bp = runif(1)*W
             inv = GRanges(chr, IRanges(bp, width(si.this)), strand = '+', seqlengths = seqlengths(si1))
-            tmp.gr = c(gr.flip(inv), inv, si1.other);
+            tmp.gr = c(gr.flipstrand(inv), inv, si1.other);
             gc1 = gChain(c(inv, inv, si1.other), gr.refactor(tmp.gr, seqnames(tmp.gr)), val = data.frame(flag = 1:length(tmp.gr) %in% 1:2))
           }  
                     
