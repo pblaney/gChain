@@ -4,7 +4,7 @@
 \alias{cgChain}
 \title{cgChain}
 \usage{
-cgChain(cigar, sn = NULL, verbose = T)
+cgChain(cigar, sn = NULL, verbose = TRUE)
 }
 \description{
 cgChain (ie "CIGAR chain")
@@ -20,6 +20,7 @@ Internal soft clips (if any exist - this would be unconventional use) are treate
 If seqnames ("sn") input not provided then the read seqnames will be the $qname field + IsFirstMateRead part of read flag.
 
 Returns a gChain mapping read space to genome space.
+cigar --- ## can be character vector or GRanges GAlignment with $cigar and $qname string field)
 }
 \author{
 Marcin Imielinski
