@@ -100,37 +100,46 @@ setMethod('show', 'gChain', function(object)
 setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame())
           {
             .Object = callNextMethod()
-            if (length(x)>0 & length(y)>0 & length(x) != length(y))
+            if (length(x)>0 & length(y)>0 & length(x) != length(y)){
               stop('x and y GRanges must be of the same length')
+            }
 
-            if (is(x, 'Seqinfo'))
+            if (is(x, 'Seqinfo')){
               x = GRanges(seqlengths = seqlengths(x))
+            }
 
-            if (is(y, 'Seqinfo'))
+            if (is(y, 'Seqinfo')){
               y = GRanges(seqlengths = seqlengths(y))
+            }
             
-            if (is.null(x) & is.null(y))
-              {
+            if (is.null(x) & is.null(y)){
                 x = GRanges('NA', IRanges(1, 0))
                 y = GRanges('NA', IRanges(1, 0))
               }
             # if x or y undefined then we just make this the "identity chain", ie filling in the other
-            else
-              if (is.null(x))
+            else{
+              if (is.null(x)){
                 x = y
-              else if (is.null(y))
+              }
+              else if (is.null(y)){
                 y = x
+              }
+            }
             
-            if (is(x, 'IRanges'))
+            if (is(x, 'IRanges')){
               x = GRanges('NA', x)
+            }
 
-            if (is(y, 'IRanges'))
+            if (is(y, 'IRanges')){
               y = GRanges('NA', y)
+            }
                           
-            if (any(is.na(seqlengths(x))))
+            if (any(is.na(seqlengths(x)))){
               x = gr.fix(x, drop = F)
-            if (any(is.na(seqlengths(y))))
+            }
+            if (any(is.na(seqlengths(y)))){
               y = gr.fix(y, drop = F)
+            }
 
             keep = which(width(x)!=0 & width(y)!=0)
             if (any(!keep)) {
@@ -141,54 +150,68 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
             strand(x)[which(as.logical(strand(x)=='*'))] = '+'                                                                                                                  
             strand(y)[which(as.logical(strand(y)=='*'))] = '+'   
             
-            if (ncol(mcols(x)))
+            if (ncol(mcols(x))){
               .Object@.galx = x[, c()]
-            else
+            }
+            else{
               .Object@.galx <- x
-            if (ncol(mcols(y)))
+            }
+            if (ncol(mcols(y))){
               .Object@.galy = y[, c()]
-            else
+            }
+            else{
               .Object@.galy <- y
+            }
             .Object@.n = sum(as.numeric(seqlengths(x)), na.rm = T);
             .Object@.m = sum(as.numeric(seqlengths(y)), na.rm = T);
             .Object@.pad.left = as.integer(cbind(1:length(x), pad.left)[,2]) 
             .Object@.pad.right = as.integer(cbind(1:length(x), pad.right)[,2])
 
             strand.match = (strand(x)==strand(y))
-            if (is.null(scale))
-              if (all(width(y)==0))                 
+            if (is.null(scale)){
+              if (all(width(y)==0)){
                 .Object@.scale = 1
-              else if (all((width(x)/width(y))==1))
+              }                 
+              else if (all((width(x)/width(y))==1)){
                 .Object@.scale = c(-1, 1)[1+as.numeric(strand.match)]                  
-              else if (all((width(y)/width(x))>=1))
+              }
+              else if (all((width(y)/width(x))>=1)){
                 .Object@.scale = (width(y) + pad.left + pad.right)/width(x)*c(-1, 1)[1+as.numeric(strand.match)]
-              else if (all((width(x)/width(y))>=1))
+              }
+              else if (all((width(x)/width(y))>=1)){
                 .Object@.scale = width(y)/(width(x) + pad.left + pad.right)*c(-1, 1)[1+as.numeric(strand.match)]
-              else
+              }
+              else{
                 stop('Ambiguous scale specified by widths.  Please provide directly')
-            else
+              }
+            }
+            else{
               .Object@.scale = scale[1]*c(-1, 1)[1+as.numeric(strand(x)==strand(y))]
+            }
 
-            if (is.null(val))
+            if (is.null(val)){
               val = data.frame()
+            }
 
-            if (!is.data.frame(val))
+            if (!is.data.frame(val)){
               val = as.data.frame(val)
+            }
 
-            if (is.vector(val))
+            if (is.vector(val)){
               val = data.frame(val = val)
+            }
             
-            if (ncol(val)>0 & nrow(val)==1)
-                .Object@values = do.call('rbind', lapply(1:length(.Object@.galx), function(y) val))
-            else
+            if (ncol(val)>0 & nrow(val)==1){
+              .Object@values = do.call('rbind', lapply(1:length(.Object@.galx), function(y) val))
+            } else{
               .Object@values = val;
+            }
 
             validObject(.Object)            
             return(.Object)          
           })
 
-setValidity('gChain', function(object)
-          {
+setValidity('gChain', function(object){
             problems = c();
 
             if (length(object@.galx) == length(object@.galy))
@@ -197,49 +220,66 @@ setValidity('gChain', function(object)
                   {
                     abs.scale = unique(abs(object@.scale))
 
-                    if (length(abs.scale)>1)
+                    if (length(abs.scale)>1){
                       problems = c(problems, 'All intervals pairs must have a single scale');                
+                    }
                     
-                    if (!((abs.scale %% 1)==0 | ((1/abs.scale) %% 1)==0))
+                    if (!((abs.scale %% 1)==0 | ((1/abs.scale) %% 1)==0)){
                       problems = c(problems, 'Interval pairs must have a scale that is either an integer or the reciprocal of an integer.');
+                    }
 
                     if (abs.scale > 1)
                       {                        
-                        if (!all((width(object@.galy) + object@.pad.left + object@.pad.right) == width(object@.galx)*abs.scale))
+                        if (!all((width(object@.galy) + object@.pad.left + object@.pad.right) == width(object@.galx)*abs.scale)){
                           problems = c(problems, 'Scales not consistent with interval pair widths and .pad.left / .pad.right properties.');
+                        }
 
-                        if (any(object@.pad.left>=abs.scale) | any(object@.pad.right>=abs.scale))
+                        if (any(object@.pad.left>=abs.scale) | any(object@.pad.right>=abs.scale)){
                           problems = c(problems, '.pad.left and .pad.right must be strictly smaller than scale for scales greater than 1')
+                        }
                       }
                     else
                       {
-                        if (!all(((width(object@.galx) + object@.pad.left + object@.pad.right)*abs.scale) == width(object@.galy)))
+                        if (!all(((width(object@.galx) + object@.pad.left + object@.pad.right)*abs.scale) == width(object@.galy))){
                           problems = c(problems, 'Scales not consistent with interval pair widths and .pad.left / .pad.right properties.');
+                        }
 
-                        if (any(object@.pad.left>=(1/abs.scale)) | any(object@.pad.right>=(1/abs.scale)))
+                        if (any(object@.pad.left>=(1/abs.scale)) | any(object@.pad.right>=(1/abs.scale))){
                           problems = c(problems, '.pad.left and .pad.right must be strictly smaller than  1/scale for scales less than 1');      
+                        }
                       }
                   }
               }
-            else
+            else{
               problems = c(problems, 'Length of interval pairs do not match')
+            }
 
-            if (nrow(object@values)>0)
-              if (nrow(object@values) != length(object@.galx))
-                  problems = c(problems, 'Length of values incompatible with gChain intervals')
+            if (nrow(object@values)>0){
+              if (nrow(object@values) != length(object@.galx)){
+                problems = c(problems, 'Length of values incompatible with gChain intervals')
+              }
+            }
                 
             
-            if (length(problems)==0)
+            if (length(problems)==0){
               TRUE
-            else
+            }
+            else{
               problems
+            }
           })
+
+
+
+
+
+
 
 #' @name gMultiply
 #' @name gMultiply
 #' @export
 setGeneric('gMultiply', function(e1, e2, pintersect=NA) standardGeneric('gMultiply'))
-setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2, pintersect=NA) {
+setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2, pintersect=NA){
 
   ##if (!.identical.seqinfo(seqinfo(e2)$y, seqinfo(e1)$x))
   ##  warning('Genomes of range of e2 of domain of e1 are not identical');
@@ -274,8 +314,7 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
   pad.right = 0;
   
   if (length(new.scale)>0)    
-    if (all(abs(new.scale)>1))
-      {
+    if (all(abs(new.scale)>1)){
         ## to determine padding on right and left 
         ## need to traverse both chains forward, lifting just the starts and end points
         ## of each e1x.preimage interval and noting how many e2y.image coordinates it maps to
@@ -309,8 +348,7 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
         pad.left = abs(new.scale)[1]-width(pintersect(e2y.starts, e2y.image))
 
         ## flip pad right and pad left for neg sccale
-        if (any(neg.map <- new.scale<0))
-          {
+        if (any(neg.map <- new.scale<0)){
             tmp = pad.right[neg.map]
             pad.right[neg.map] = pad.left[neg.map]
             pad.left[neg.map] = tmp[neg.map]
@@ -322,9 +360,7 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
         one.codon = width(e2x.preimage)==1
         pad.left[one.codon & new.scale>0] = 0
         pad.right[one.codon & new.scale<0] = 0
-      }
-    else if (all(abs(new.scale)<1))
-      {
+      } else if (all(abs(new.scale)<1)) {
         ## now do the same in reverse if the scale is changing in the other direction
         values(e2y.image)$e1.link.id = e1.link.ids
         values(e2y.image)$e2.link.id = e2.link.ids
@@ -349,12 +385,11 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
         pad.right = (1/abs(new.scale)[1])-width(pintersect(e1x.ends, e2x.preimage))
 
         ## flip pad right and pad left for neg sccale
-        if (any(neg.map <- new.scale<0))
-          {
+        if (any(neg.map <- new.scale<0)){
             tmp = pad.right[neg.map]
             pad.right[neg.map] = pad.left[neg.map]
             pad.left[neg.map] = tmp[neg.map]
-          }
+        }
         
         ## one codon edge case - padding can be on either side, we choose right
         one.codon = width(e2y.image)==1
@@ -365,20 +400,24 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
   val.e1 = values(e1)[e2y.image$link.id, ,drop = FALSE]
   val.e2 = values(e2)[e2x.preimage$link.id, ,drop = FALSE]
 
-  if (ncol(val.e1)>0 & ncol(val.e2)>0 && FALSE) ## JEREMIAH added FALSE, 3.1
-    {
+  if (ncol(val.e1)>0 & ncol(val.e2)>0 && FALSE) {
       val = cbind(val.e1[, setdiff(names(val.e1), names(val.e2)), drop = FALSE], val.e2[, setdiff(names(val.e2), names(val.e1)), drop = FALSE])
       shared.names = intersect(names(val.e2), names(val.e1))
-      if (length(shared.names)>0)
+      if (length(shared.names)>0){
         val[, shared.names] = val.e2[,shared.names] | val.e1[,shared.names]
+      }
     }
-  else if (ncol(val.e1)>0)
+  else if (ncol(val.e1)>0){
     val = val.e1
-  else
+  }
+  else{
     val = val.e2
+  }
 
   return(gChain(e2x.preimage, e2y.image, pad.left = pad.left, pad.right = pad.right, val= val))
 })
+
+
 
 
 ###
@@ -394,21 +433,24 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
 #  @export
 ###
 setMethod("*", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2) {
-  return(gMultiply(e1, e2, pintersect = NA))
+    return(gMultiply(e1, e2, pintersect = NA))
 })
 
 
 setMethod("*", signature(e1 = "gChain", e2 = "GRanges"), function(e1, e2) {
-  return(lift(e1, e2))
+    return(lift(e1, e2))
 })
 
 
 setMethod("*", signature(e1 = "gChain", e2 = "GRangesList"), function(e1, e2) {
-  return(lift(e1, e2))
+    return(lift(e1, e2))
 })
 
 
 setGeneric('lift', function(.Object, x, ...) standardGeneric('lift')) 
+
+
+
 
 #' @name lift
 #' @title lift
@@ -442,27 +484,31 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
 
             verbose=FALSE
 
-            if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData')))
+            if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData'))){
               stop('output format can only be "GRanges", "GRangesList", "df", "df.all",  or "matrix"')
+            }
 
             if (is(x, 'trackData'))
               {
-                if (length(x)>1)
+                if (length(x)>1){
                   return(do.call('c', lapply(1:length(x), function(i) lift(.Object, x[i]))))
+                }
                 
                 x.track = x[1];
                 x = x.track@data[[1]]
                 format = class(x);
               }
-            else
+            else{
               x.track = NULL;
+            }
             
             if (is(x, 'GRangesList'))
               {
                 input.grl = T
                 grl.names = names(x);
-                if (is.null(grl.names))
-                    grl.names = as.character(1:length(x))
+                if (is.null(grl.names)){
+                  grl.names = as.character(1:length(x))
+                }
                 
                 grl.val = values(x);
                 rownames(grl.val) = grl.names
@@ -470,18 +516,18 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
 
                 tmp.df = tryCatch(as.data.frame(x), error = function(e) e)
 
-                if (!inherits(tmp.df, 'error'))
-                  {
+                if (!inherits(tmp.df, 'error')){
                     #list.id = tmp.df$element
                     list.id = tmp.df$group
                     gr.name = rownames(tmp.df);
-                  }
-                else ## gr names are screwy so do some gymnastics
-                  {
-                    if (!is.null(names(x)))
+                } else { 
+                    ## gr names are screwy so do some gymnastics
+                    if (!is.null(names(x))){
                       x.name = names(x)
-                    else
+                    }
+                    else{
                       x.name = 1:length(x)                    
+                    }
                     list.id = as.character(Rle(x.name, sapply(x, length)))
                     tmp.x = x;
                     names(tmp.x) = NULL;
@@ -495,42 +541,39 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 
                 format = 'GRanges';
               }
-            else
+            else{
               input.grl = F
+            }
             
-            if (is(x, 'IRanges'))
+            if (is(x, 'IRanges')){
               x = GRanges('NA', x)
+            }
 
             #if (!.identical.seqinfo(seqinfo(x), seqinfo(.Object)[[1]]))
             #  warning('Seqinfo of chain and query are not the same');
             
-            if (!inherits(x, 'GRanges'))
+            if (!inherits(x, 'GRanges')){
               stop('x must be Granges object')              
+            }
 
-            if (length(.Object@.galx)>0)
-              {
-##                 pval <- length(seqlevels(x)) > 50 && length(seqlevels(.Object@.galx)) > 50
-##                 if (!is.na(pval) && psmart && !('pintersect' %in% names(opts)))
-##                   hits <- gr.findoverlaps(x, .Object@.galx, verbose = T, pintersect=pval) # pairs of matches
-##                 else
-##                   hits <- gr.findoverlaps(x, .Object@.galx, verbose = T, ...)
+            if (length(.Object@.galx)>0){
 
                 pval <- length(seqlevels(x)) > 50 && length(seqlevels(.Object@.galx)) > 50
-                if (verbose)
+                if (verbose){
                   print(paste('psmart is', pval))
+                }
                 ## if (!is.na(pval) && is.na(pintersect))
                 ##   hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, ...) # pairs of matches
                 ## else
 
-                if (is.null(by))
-                    system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose,  ...))
-                else
-                    {
-
-                        tmpx = .Object@.galx
-                        values(tmpx) = values(.Object)
-                        system.time(hits <- gr.findoverlaps(x, tmpx, verbose = verbose, by = by,   ...))
-                    }
+                if (is.null(by)){
+                  system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose,  ...))
+                }
+                else{
+                  tmpx = .Object@.galx
+                  values(tmpx) = values(.Object)
+                  system.time(hits <- gr.findoverlaps(x, tmpx, verbose = verbose, by = by,   ...))
+                }
 
                 s.overlap = .Object@.scale[values(hits)$subject.id]
                 s.abs = abs(s.overlap)
@@ -543,8 +586,7 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 starts = ends = rep(NA, length(qr.hits))
                 
                 ## lift onto range
-                if (unique(abs(.Object@.scale))<1)
-                  {
+                if (unique(abs(.Object@.scale))<1){
                     pad.left.x = .Object@.pad.left[values(hits)$subject.id]
                     pad.right.x = .Object@.pad.right[values(hits)$subject.id]                    
                     
@@ -553,9 +595,7 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
 
                     starts[!neg.map] = start(qr.hits)[!neg.map] + ceiling((start(qd.overlap)[!neg.map] - link.starts[!neg.map] + 1 + pad.left.x[!neg.map])*s.abs[!neg.map]) - 1 
                     ends[!neg.map] = start(qr.hits)[!neg.map] + ceiling((end(qd.overlap)[!neg.map] - link.starts[!neg.map] + 1 + pad.left.x[!neg.map])*s.abs[!neg.map]) - 1 
-                  }
-                else
-                  {
+                } else {
                     pad.left.y = .Object@.pad.left[values(hits)$subject.id]
                     pad.right.y = .Object@.pad.right[values(hits)$subject.id]
                     
@@ -566,21 +606,24 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                      ends[neg.map] = end(qr.hits)[neg.map] - (shift1[neg.map] - pad.right.y[neg.map])
                      starts[!neg.map] = start(qr.hits)[!neg.map] + (shift1[!neg.map] - pad.left.y[!neg.map])
                      ends[!neg.map] = start(qr.hits)[!neg.map] + (shift2[!neg.map] - pad.left.y[!neg.map])
-                  }
+                }
                 out = GRanges(seqnames(qr.hits), IRanges(starts, ends), strand = strand(qr.hits), seqlengths = seqlengths(qr.hits));
                 
                 ## propagate strand flips depending on sign of s.overlap for link pair            
                 has.strand.x = as.logical(as.character(strand(x)) %in% c('+', '-'))[values(hits)$query.id]
                 flip=  has.strand.x  & s.overlap<0
-                if (any(flip))
+                if (any(flip)){
                   strand(out)[flip] = c('-', '+')[1 + as.logical(strand(x)=='-')][values(hits)$query.id][flip]
-                if (any(!flip))
+                }
+                if (any(!flip)){
                   strand(out)[!flip] = strand(x)[values(hits)$query.id][!flip]
+                }
 
                 ## if y links have unspecified strand then do not propagate strand information 
                 has.strand.y = as.logical(as.character(strand(.Object@.galy)) %in% c('+', '-'))[values(hits)$subject.id]
-                if (any(!has.strand.y))
+                if (any(!has.strand.y)){
                   strand(out)[!has.strand.y] = '*';
+                }
                 
                 ## propagate query GRanges values
                 values(out) = values(x)[values(hits)$query.id, , drop = FALSE]
@@ -591,12 +634,14 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 values(out)$query.end = end(qd.overlap) - start(x)[values(hits)$query.id] + 1            
                 values(out)$link.id = values(hits)$subject.id
 
-                if (length(out)>0)
-                    out = out[order(values(out)$query.id, values(out)$query.start)]
+                if (length(out)>0){
+                  out = out[order(values(out)$query.id, values(out)$query.start)]
+                }
 
               }
-            else
+            else{
               out = GRanges(seqlengths = seqlengths(.Object@.galy))
+            }
 
             if (format != 'GRanges') ## we will expand the output 
               {
@@ -661,14 +706,16 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 if (format == 'df')
                   {
                     df.out = df.out[!duplicated(df.out[, c('query.coord')]), ];
-                    if (input.grl)
+                    if (input.grl){
                       df.out = split(df.out, df.out$list.id)
+                    }
                     # return(df.out)
                   }
                 else
                   {
-                    if (input.grl)
+                    if (input.grl){
                       df.out = split(df.out, df.out$list.id)                    
+                    }
                     # return(df.out)
                   }
                 out = df.out;
@@ -681,21 +728,21 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                         {
                             out = split(out, values(out)$list.id)
                             
-                            if (!is.null(grl.names))
-                                {
+                            if (!is.null(grl.names)){
                                     ix = match(names(out), grl.names)
                                     names(out) = grl.names[ix]
                                 }                        
-                            else
-                                {
+                            else{
                                     ix = names(out);                                    
                                 }
 
-                            if (ncol(grl.val)>0)
-                                values(out) = grl.val[ix, ,drop = FALSE];
+                            if (ncol(grl.val)>0){
+                              values(out) = grl.val[ix, ,drop = FALSE];
+                            }
                             
-                            if (split.grl)
-                                out = grl.split(out)
+                            if (split.grl){
+                              out = grl.split(out)
+                            }
                         }
                     else
                         out = gr.fix(GRangesList(), out)
@@ -725,28 +772,25 @@ setMethod("dim", signature(x = "gChain"), function(x) return(c(x@.n, x@.m)))
 #'
 #' @export
 setGeneric('links', function(.Object, ...) standardGeneric('links'))
-setMethod("links", signature(.Object = "gChain"), function(.Object)
-          {
-            return(list(x = .Object@.galx, y = .Object@.galy))                             
-          })
+setMethod("links", signature(.Object = "gChain"), function(.Object){
+    return(list(x = .Object@.galx, y = .Object@.galy))                             
+})
 
 #' @name values
 #' @title values
 #' @description
 #' print meta data of gChain
-setMethod("values", signature(x= "gChain"), function(x)
-          {
-            return(x@values)
-          })
+setMethod("values", signature(x= "gChain"), function(x){
+    return(x@values)
+})
 
 #' @name values
 #' @title values
 #' @description
 #' get scale of gChain
-setMethod("scale", signature(x= "gChain"), function(x)
-          {
-            return(unique(abs(x@.scale)))
-          })
+setMethod("scale", signature(x= "gChain"), function(x){
+    return(unique(abs(x@.scale)))
+})
 
 
 #' @name values
@@ -754,25 +798,22 @@ setMethod("scale", signature(x= "gChain"), function(x)
 #' @description
 #' get pads of gChain
 setGeneric('pads', function(.Object, ...) standardGeneric('pads'))
-setMethod("pads", signature(.Object = "gChain"), function(.Object)
-          {
-            return(data.frame(pad.left = .Object@.pad.left, pad.right = .Object@.pad.right, stringsAsFactors = F))
-          })
+setMethod("pads", signature(.Object = "gChain"), function(.Object){
+    return(data.frame(pad.left = .Object@.pad.left, pad.right = .Object@.pad.right, stringsAsFactors = F))
+})
 
 #' @name genomes
 #' @title genomes
 #' @description
 #' return seqinfos associated with domain and range genome of gChain
 setGeneric('genomes', function(.Object, ...) standardGeneric('genomes'))
-setMethod("genomes", signature(.Object = "gChain"), function(.Object)
-          {
-            return(lapply(seqinfo(.Object), seqinfo2gr))
-          })
+setMethod("genomes", signature(.Object = "gChain"), function(.Object){
+    return(lapply(seqinfo(.Object), seqinfo2gr))
+})
 
-setMethod('$', 'gChain', function(x, name)
-          {
-            return(links(x)[[name]])
-          })
+setMethod('$', 'gChain', function(x, name){
+    return(links(x)[[name]])
+})
 
 
 #' @name c
@@ -781,21 +822,22 @@ setMethod('$', 'gChain', function(x, name)
 #' concatenate gChains, i.e. concatenate their links
 #' they must have the same domain and range genome
 #' @export
-setMethod('c', 'gChain', function(x, ...)
-          {
+setMethod('c', 'gChain', function(x, ...){
 
-            if (missing('x'))
-                args = list(...)
-            else
-              args = c(list(x), list(...))
-            if (any(sapply(args, class) != 'gChain'))
-              stop('at least one of the objects to be concatanted is not a gChain')
+    if (missing('x')){
+        args = list(...)
+    } else{
+        args = c(list(x), list(...))
+    }
+    if (any(sapply(args, class) != 'gChain')){
+        stop('at least one of the objects to be concatanted is not a gChain')
+    }
 
-            return(gChain(unlist(do.call('GRangesList', lapply(args, function(x) x@.galx))),
-                   unlist(do.call('GRangesList', lapply(args, function(x) x@.galy))),
-                          pad.left = unlist(lapply(args, function(x) x@.pad.left)),
-                          pad.right = unlist(lapply(args, function(x) x@.pad.right))))
-          })
+    return(gChain(unlist(do.call('GRangesList', lapply(args, function(x) x@.galx))),
+          unlist(do.call('GRangesList', lapply(args, function(x) x@.galy))),
+              pad.left = unlist(lapply(args, function(x) x@.pad.left)),
+              pad.right = unlist(lapply(args, function(x) x@.pad.right))))
+})
 
 
 #############################
@@ -816,12 +858,13 @@ setMethod('c', 'gChain', function(x, ...)
 #' if space = Inf, then the Chain will map the entire sequence length (ie the whole chromosome)
 #' (of x or y, whichever is the largest for the given interval pair)
 #############################
-setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x = F, shift.y = T)
-          {
-            abs.scale = unique(abs(x@.scale))
+setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x = F, shift.y = T){
+    
+    abs.scale = unique(abs(x@.scale))
 
-            if (is.null(space))
+            if (is.null(space)){
               space = Inf;
+            }
             
             if (abs.scale<=1)
               {
@@ -846,11 +889,13 @@ setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x =
                 new.slen.x = structure(tmp[,2], names = tmp[,1])
                 seqlengths(x@.galx) = pmax(seqlengths(x@.galx), new.slen.x[seqlevels(x@.galx)])
 
-                if (shift.x)
+                if (shift.x){
                   x@.galx = shift(x@.galx, 1/abs.scale*(right.space))
+                }
                 
-                if (shift.y)
+                if (shift.y){
                   x@.galy = shift(x@.galy, right.space)
+                }
 
                 x@.galx = gr.pad(x@.galx, cbind((1/abs.scale)*left.space, (1/abs.scale)*right.space))                
                 x@.galy = gr.pad(x@.galy, cbind((left.space), (right.space)))
@@ -878,11 +923,13 @@ setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x =
                 new.slen.y = structure(tmp[,2], names = tmp[,1])
                 seqlengths(x@.galy) = pmax(seqlengths(x@.galy), new.slen.y[seqlevels(x@.galy)])
                 
-                if (shift.x)
+                if (shift.x){
                   x@.galx = shift(x@.galx, right.space)
+                }
                 
-                if (shift.y)
+                if (shift.y){
                   x@.galy = shift(x@.galy, abs.scale*right.space)
+                }
                 
                 x@.galx = gr.pad(x@.galx, cbind(left.space, right.space))
                 x@.galy = gr.pad(x@.galy, cbind(abs.scale*(left.space), abs.scale*(right.space)))
@@ -892,11 +939,10 @@ setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x =
             return(x);
           })
 
-setReplaceMethod("values", signature(x= "gChain"), function(x, value)
-          {
-            x@values = value;
-            return(x)
-          })
+setReplaceMethod("values", signature(x= "gChain"), function(x, value){
+    x@values = value;
+    return(x)
+})
 
 
 #' @name seqinfo
@@ -904,30 +950,28 @@ setReplaceMethod("values", signature(x= "gChain"), function(x, value)
 #' @description
 #' return seqinfo for gChain
 #' @export
-setMethod("seqinfo", signature(x = "gChain"), function(x)
-          {
-            return(list(x = seqinfo(x@.galx), y = seqinfo(x@.galy)))
-          })
+setMethod("seqinfo", signature(x = "gChain"), function(x){
+    return(list(x = seqinfo(x@.galx), y = seqinfo(x@.galy)))
+})
 
 #' @name t
 #' @title t
 #' @description
 #' "transpose of chain" is flipping x and y variables (i.e. inverting the mapping)
 #' @export
-setMethod("t", signature(x = "gChain"), function(x)
-          {
-            tmp.n = x@.n
-            tmp.galx = x@.galx
+setMethod("t", signature(x = "gChain"), function(x){
+    tmp.n = x@.n
+    tmp.galx = x@.galx
 
-            x@.galx = x@.galy
-            x@.n = x@.m
+    x@.galx = x@.galy
+    x@.n = x@.m
 
-            x@.galy = tmp.galx
-            x@.m = tmp.n
-            x@.scale = 1/x@.scale;
+    x@.galy = tmp.galx
+    x@.m = tmp.n
+    x@.scale = 1/x@.scale;
             
-            return(x)
-          })
+    return(x)
+})
 
 
 #############################
@@ -945,13 +989,14 @@ setMethod("t", signature(x = "gChain"), function(x)
 #' @export
 #############################
 setGeneric('breaks', function(x, ...) standardGeneric('breaks'))
-setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) 
-          {
-            if (rev)
+setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
+            if (rev){
               x = t(x)
+            }
 
-            if (length(x@.galx)==0)
+            if (length(x@.galx)==0){
               return(GRangesList())
+            }
             
             seed = suppressWarnings(c(shift(gr.start(x@.galy,2)-1), shift(gr.end(x@.galy, 2), 1)))
             strand(seed) = '+'
@@ -964,14 +1009,16 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE)
             ## of 1 grab their ids
             seed.l = seed.l[width(seed.l)==1]            
 
-            if (length(seed.l)==0)
+            if (length(seed.l)==0){
               return(GRangesList())
+            }
               
             broken.id = as.numeric(names(which(vaggregate(seed.l$query.start, by = list(seed.l$query.id), FUN = function(x) any(x==1) & any(x==2)))))
             seed.l = seed.l[seed.l$query.id %in% broken.id]
            
-            if (length(seed.l)==0)
+            if (length(seed.l)==0){
               return(GRangesList())
+            }
             
             # find all pairs of lifted ranges that are no longer contigous
             # ie one range has query.start = 1 and the other query.start = 2
@@ -1012,8 +1059,9 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE)
 setGeneric('cn', function(x, ...) standardGeneric('cn'))
 setMethod("cn", signature(x = "gChain"), function(x, rev = FALSE) 
           {
-            if (rev)
+            if (rev){
               x = t(x)
+            }
 
             g2 = seqinfo2gr(x@.galy);
             g2.l = lift(t(x), g2)
@@ -2538,11 +2586,10 @@ bfb = function(chr, numcycles = 5, w = 0.2, wd = 0.4, end = TRUE, si = seqinfo(k
 ##
 ## a vector x = seq(1, 100, 3) (ie with no sequential runs) would be described as IRanges(start = x, end = x)
 ##
-vec2ir = function(x)
-  {
+vec2ir = function(x){
     bkpoints.x = which(diff(floor(x))!=1)
     return(IRanges(start = x[c(1, bkpoints.x+1)], end = x[c(bkpoints.x, length(x))]))
-  }
+}
 
 ## ir2vec
 ##
@@ -2554,28 +2601,33 @@ vec2ir = function(x)
 ## "each" or "each[k]" times, respctively
 ir2vec = function(x, rev = FALSE, each = NULL)
   {
-    if (length(rev) == 1)
+    if (length(rev) == 1){
       rev = rep(rev, length(x))
+    }
     if (!is.null(each))
       {
-        if (length(each) == 1)
+        if (length(each) == 1){
           each = rep(each, length(x))
+        }
         return(unlist(lapply(1:length(x),
                              function(i) if (rev[i]) rep(rev(c(start(x[i]):end(x[i]))), each = each[i])
                              else rep(c(start(x[i]):end(x[i])), each = each[i]))))
       }
-    else    
+    else{
       return(unlist(lapply(1:length(x), function(i) if (rev[i]) rev(c(start(x[i]):end(x[i]))) else c(start(x[i]):end(x[i])))))
+    }   
   }
 
 
 ### concatentate gChains
 gCat <- function(x, ...) {
 
-  if (missing('x'))
+  if (missing('x')){
     args <- list(...)
-  else
+  }
+  else{
     args <- c(x, list(...))
+  }
 
   # remove empty
   args <- args[sapply(args, function(y) length(y@.galx)) > 0]
@@ -2583,8 +2635,9 @@ gCat <- function(x, ...) {
   print('gCat: working on data tables')
   dts <- lapply(args, function(x) {
     sn <- as.character(seqnames(x@.galx))
-    if (identical('NA', sn))
+    if (identical('NA', sn)){
       return(data.table())
+    }
     st <- start(x@.galx)
     ed <- end(x@.galx)
     sr <- as.character(strand(x@.galx))
@@ -2595,8 +2648,9 @@ gCat <- function(x, ...) {
   
   dts <- lapply(args, function(x) {
     sn <- as.character(seqnames(x@.galy))
-    if (identical('NA', sn))
+    if (identical('NA', sn)){
       return(data.table())
+    }
     st <- start(x@.galy)
     ed <- end(x@.galy)
     sr <- as.character(strand(x@.galy))
@@ -2610,8 +2664,9 @@ gCat <- function(x, ...) {
   sly <- do.call('c', lapply(args, function(y) seqlengths(y@.galy)))
   sly <- sly[unique(names(sly))]
 
-  if (nrow(dtx) == 0)
+  if (nrow(dtx) == 0){
     return(gChain())
+  }
 
   ## I hacked the GRanges constructor to make it way faster for large dt to Gr conversions
   print('...gCat: making GRanges')
@@ -2658,7 +2713,7 @@ gCat <- function(x, ...) {
 #' @return Deduplicated gChain
 #' @note This is a bit of a hack, as there are better ways to remove dupes before this step
 #' @export
-gUnique <- function(gc) {
+gUnique = function(gc){
 
   lix <- links(gc)$x
   liy <- links(gc)$y
@@ -2693,27 +2748,26 @@ gUnique <- function(gc) {
 #' @param x IRanges object
 #' @param gap
 #' @return squeezed IRanges object
-squeeze = function(x, gap = 0)
-  {
-    if (!inherits(x, 'IRanges'))
-      stop('squeeze() only defined for IRanges')            
-    if (length(x) == 0)
-      return(x)
-    else if (length(x) == 1)
-      return(IRanges(start = 1, width = width(x)))
-    else
-      {
+squeeze = function(x, gap = 0){
+    if (!inherits(x, 'IRanges')){
+        stop('squeeze() only defined for IRanges')            
+    }
+    if (length(x) == 0){
+        return(x)
+    } else if (length(x) == 1){
+        return(IRanges(start = 1, width = width(x)))
+    } else{
         starts = cumsum(c(1, width(x[1:(length(x)-1)])+gap))
         ends = starts+width(x)-1
         return(IRanges(starts, ends))
-      }
-  }
+    }
+}
 
 
 #################################
-#'@name gSubset
+#' @name gSubset
 #' @title gSubset
-#'@description
+#' @description
 #' Subset a gChain
 #'
 #' Make smaller gChain that contains only the seqnames
@@ -2724,21 +2778,26 @@ squeeze = function(x, gap = 0)
 #' @param x.or.y Links with hits in xnames OR ynames included. Default FALSE (i.e. AND)
 #' @return subsetted gChain
 #' @export
-gSubset <- function(gc, xnames=NULL, ynames=NULL, x.or.y = FALSE) {
+gSubset = function(gc, xnames=NULL, ynames=NULL, x.or.y = FALSE) {
 
-  if (class(gc) != 'gChain')
+  if (class(gc) != 'gChain'){
       stop('gSubset: Need to input a gChain')
+  }
 
   # default is to include everything
   val.x <- val.y <- rep(TRUE, length(links(gc)$x))
-  if (!is.null(xnames))
-    val.x <- as.character(seqnames(links(gc)$x)) %in% xnames
-  if (!is.null(ynames))
-    val.y <- as.character(seqnames(links(gc)$y)) %in% ynames
-  if (x.or.y)
-    val <- val.x | val.y
-  else
-    val <- val.x & val.y
+  if (!is.null(xnames)){
+      val.x <- as.character(seqnames(links(gc)$x)) %in% xnames
+  }
+  if (!is.null(ynames)){
+      val.y <- as.character(seqnames(links(gc)$y)) %in% ynames
+  }
+  if (x.or.y){
+      val <- val.x | val.y
+  }
+  else{
+      val <- val.x & val.y
+  }
 
   sn <- as.character(seqnames(links(gc)$y))[val]
   start <- start(links(gc)$y)[val]
@@ -2752,25 +2811,20 @@ gSubset <- function(gc, xnames=NULL, ynames=NULL, x.or.y = FALSE) {
   strand <- as.character(strand(links(gc)$x))[val]
   gc@.galx <- GRanges(sn, IRanges(start, end), strand=strand)
   
-  #suppressWarnings(gc@.galx <- links(gc)$x[val])
-  #suppressWarnings(gc@.galy <- links(gc)$y[val])
+
   gc@.pad.left  <- gc@.pad.left[val] 
   gc@.pad.right <- gc@.pad.right[val]
   gc@.scale <- gc@.scale[val]
-  if (nrow(gc@values) != 0)
+  if (nrow(gc@values) != 0){
     gc@values <- gc@values[val, ]
+  }
   gc@.n <- sum(width(gc@.galx))
   gc@.m <- sum(width(gc@.galy))  
-  #stx <- as.character(strand(lix))
-  #sty <- as.character(strand(liy))
-  #snx <- as.character(seqnames(lix))
-  #sny <- as.character(seqnames(liy))
-  #suppressWarnings(grx <- GRanges(snx, ranges=ranges(lix), strand=stx))
-  #suppressWarnings(gry <- GRanges(sny, ranges=ranges(liy), strand=sty))
-  #suppressWarnings(gc.out <- new('gChain', x=grx, y=gry))
 
   return(gc)
 }
+
+
 
 
 #' @name grl.split
@@ -2790,12 +2844,13 @@ grl.split = function(grl, seqname = TRUE, strand = TRUE,
                      )
 {
     ele = tryCatch(as.data.frame(grl)$element, error = function(e) e)
-    if (inherits(ele, 'error'))
-    {
-        if (is.null(names(grl)))
+    if (inherits(ele, 'error')){
+        if (is.null(names(grl))){
             nm = 1:length(names(grl))
-        else
+        }
+        else{
             nm = names(grl)
+        }
 
         ele = unlist(lapply(1:length(grl), function(x) rep(nm[x], length(grl[[x]]))))
     }
@@ -2804,16 +2859,21 @@ grl.split = function(grl, seqname = TRUE, strand = TRUE,
     names(gr) = NULL;
 
     by = ele;
-    if (seqname)
+    if (seqname){
         by = paste(by, seqnames(gr))
+    }
 
-    if (strand)
+    if (strand){
         by = paste(by, strand(gr))
+    }
 
     values = intersect(names(values(gr)), values);
-    if (length(values)>0)
-        for (val in values)
+
+    if (length(values)>0){
+        for (val in values){
             by = paste(by, values(gr)[, val])
+        }
+    }
 
     out = split(gr, by);
     names(out) = ele[!duplicated(by)]
@@ -2824,17 +2884,16 @@ grl.split = function(grl, seqname = TRUE, strand = TRUE,
 }
 
 
-vaggregate = function(...)
-  {
+vaggregate = function(...){
     out = aggregate(...);
     return(structure(out[,ncol(out)], names = do.call(paste, lapply(names(out)[1:(ncol(out)-1)], function(x) out[,x]))))
-  }
+}
 
 
-levapply = function(x, by, FUN = 'order')
-  {
-    if (!is.list(by))
+levapply = function(x, by, FUN = 'order'){
+    if (!is.list(by)){
       by = list(by)
+    }
 
     f = factor(do.call('paste', c(list(sep = '|'), by)))
     ixl = split(1:length(x), f);
@@ -2843,21 +2902,25 @@ levapply = function(x, by, FUN = 'order')
     out = rep(NA, length(x))
     out[as.numeric(names(res))] = res;
     return(out)
-  }
+}
+
+
 
 seqinfo2gr <- function(si, strip.empty = FALSE)
 {
-    if (is(si, 'vector')) ## treat si as seqlengths if vector
+    ## treat si as seqlengths if vector
+    if (is(si, 'vector')){
         si = Seqinfo(seqlengths = si, seqnames = names(si))
-    else if (!is(si, 'Seqinfo'))
+    } 
+    else if (!is(si, 'Seqinfo')){
         si = seqinfo(si)
+    }
 
     sl = seqlengths(si)
     sn = seqnames(si);
     sl[is.na(sl)] = 0;
 
-    if (strip.empty)
-    {
+    if (strip.empty){
         sn = sn[sl!=0];
         sl = sl[sl!=0];
     }
@@ -2869,13 +2932,14 @@ seqinfo2gr <- function(si, strip.empty = FALSE)
 }
 
 
-dedup = function(x, suffix = '.')
-{
-  dup = duplicated(x);
-  udup = setdiff(unique(x[dup]), NA)
-  udup.ix = lapply(udup, function(y) which(x==y))
-  udup.suffices = lapply(udup.ix, function(y) c('', paste(suffix, 2:length(y), sep = '')))
-  out = x;
-  out[unlist(udup.ix)] = paste(out[unlist(udup.ix)], unlist(udup.suffices), sep = '');
-  return(out)  
+
+
+dedup = function(x, suffix = '.'){
+    dup = duplicated(x);
+    udup = setdiff(unique(x[dup]), NA)
+    udup.ix = lapply(udup, function(y) which(x==y))
+    udup.suffices = lapply(udup.ix, function(y) c('', paste(suffix, 2:length(y), sep = '')))
+    out = x;
+    out[unlist(udup.ix)] = paste(out[unlist(udup.ix)], unlist(udup.suffices), sep = '');
+    return(out)  
 }
