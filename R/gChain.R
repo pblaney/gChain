@@ -2876,7 +2876,7 @@ levapply = function(x, by, FUN = 'order'){
 
 
 
-seqinfo2gr <- function(si, strip.empty = FALSE){
+seqinfo2gr = function(si, strip.empty = FALSE){
     ## treat si as seqlengths if vector
     if (is(si, 'vector')){
         si = Seqinfo(seqlengths = si, seqnames = names(si))
