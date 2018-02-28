@@ -82,7 +82,7 @@
 setClass('gChain', representation(.galx = 'GRanges', .galy = 'GRanges', .scale = 'numeric', .pad.left = 'integer', .pad.right = 'integer', values = 'data.frame', .n = 'numeric', .m = 'numeric'))
 
 
-suppressWarnings(removeMethod('show', 'gChain')) ## takes care of stupid R 2.15 bug
+suppressWarnings(removeMethod('show', 'gChain')) 
 setMethod('show', 'gChain', function(object){ 
     message(sprintf('gChain object with scale(s) %s mapping %s GRanges on sequence of length %s to %s GRanges on sequence of length %s.\n',
         paste(unique(object@.scale), collapse = ", "), length(object@.galx), object@.n, length(object@.galy), object@.m))
@@ -115,8 +115,8 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
     }
             
     if (is.null(x) & is.null(y)){
-                x = GRanges('NA', IRanges(1, 0))
-                y = GRanges('NA', IRanges(1, 0))
+        x = GRanges('NA', IRanges(1, 0))
+        y = GRanges('NA', IRanges(1, 0))
     } else{
         ## if x or y undefined then we just make this the "identity chain", ie filling in the other
         if (is.null(x)){
@@ -250,9 +250,9 @@ setValidity('gChain', function(object){
     }
                 
     if (length(problems)==0){
-                TRUE
+        TRUE
     } else{
-                problems
+        problems
     }
 })
 
@@ -1066,8 +1066,6 @@ setMethod('[', 'gChain', function(x, i){
 
 gChain = function(...) new('gChain', ...)
 
-
-                                        #
 ######
 # Basic gChain synthesizers
 #
@@ -1496,7 +1494,7 @@ paChain = function(seq1, seq2,
 #' @name cgChain
 #' @title cgChain
 #' @description
-#' cgChain (ie "CIGAR chain")
+#' cgChain (i.e. "CIGAR chain")
 #'
 #' processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
 #' representing edit operations from subject to pattern.
@@ -1892,12 +1890,12 @@ txChain = function(grl, txname = NULL, translate = F, exonFrame.field = 'exon_fr
 #
 # inputs must be nonoverlapping
 ############################################
-duplicate = function(gr, mult = 1, dup.string = ' copy ')
+duplicate = function(gr, mult = 1, dup.string = 'copy')
 {
   if (sum(as.numeric(width(reduce(gr)))) != sum(as.numeric(width(gr)))){
       stop('Input ranges  must be nonoverlapping')
   }
-  return(copy(gr, gr.start(gr), mult = mult, dup.string = dup.stirng))
+  return(copy(gr, gr.start(gr), mult = mult, dup.string = dup.string))
 }
 
 ############################################
@@ -2588,7 +2586,7 @@ gCat <- function(x, ...) {
 
     if (missing('x')){
         args <- list(...)
-    }else{
+    } else{
         args <- c(x, list(...))
     }
 

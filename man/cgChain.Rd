@@ -7,7 +7,7 @@
 cgChain(cigar, sn = NULL, verbose = TRUE)
 }
 \description{
-cgChain (ie "CIGAR chain")
+cgChain (i.e. "CIGAR chain")
 
 processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
 representing edit operations from subject to pattern.
