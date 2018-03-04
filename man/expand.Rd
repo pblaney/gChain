@@ -5,7 +5,8 @@
 \alias{expand}
 \title{expand}
 \usage{
-\S4method{expand}{gChain}(x, space = NULL, shift.x = F, shift.y = T)
+\S4method{expand}{gChain}(x, space = NULL, shift.x = FALSE,
+  shift.y = TRUE)
 }
 \description{
 GChain::expand

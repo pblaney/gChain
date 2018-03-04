@@ -79,14 +79,18 @@
 #' will be an integer, or (for scales<1)  (width(x)+pad.left+pad.right)/width(y) will be an integer.
 #' @import gUtils GenomicRanges Matrix
 #################################################################
-setClass('gChain', representation(.galx = 'GRanges', .galy = 'GRanges', .scale = 'numeric', .pad.left = 'integer', .pad.right = 'integer', values = 'data.frame', .n = 'numeric', .m = 'numeric'))
+setClass('gChain', representation(.galx = 'GRanges', .galy = 'GRanges', .scale = 'numeric', .pad.left = 'integer', .pad.right = 'integer', val = 'data.frame', .n = 'numeric', .m = 'numeric'))
 
 
 suppressWarnings(removeMethod('show', 'gChain')) 
+
 setMethod('show', 'gChain', function(object){ 
     message(sprintf('gChain object with scale(s) %s mapping %s GRanges on sequence of length %s to %s GRanges on sequence of length %s.\n',
         paste(unique(object@.scale), collapse = ", "), length(object@.galx), object@.n, length(object@.galy), object@.m))
 })
+
+
+
 
 #' @name initialize
 #' @title initialize
@@ -101,7 +105,7 @@ setMethod('show', 'gChain', function(object){
 #' @export
 setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame())
 {
-    .Object = callNextMethod()
+    .Object <- callNextMethod()
     if (length(x)>0 & length(y)>0 & length(x) != length(y)){
         stop('x and y GRanges must be of the same length')
     }
@@ -160,8 +164,8 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
     } else{
         .Object@.galy <- y
     }
-    .Object@.n = sum(as.numeric(seqlengths(x)), na.rm = T);
-    .Object@.m = sum(as.numeric(seqlengths(y)), na.rm = T);
+    .Object@.n = sum(as.numeric(seqlengths(x)), na.rm = TRUE);
+    .Object@.m = sum(as.numeric(seqlengths(y)), na.rm = TRUE);
     .Object@.pad.left = as.integer(cbind(1:length(x), pad.left)[,2]) 
     .Object@.pad.right = as.integer(cbind(1:length(x), pad.right)[,2])
 
@@ -313,7 +317,6 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
             values(e2x.preimage)$e1.link.id = e1.link.ids;
             values(e2x.preimage)$e2.link.id = e2.link.ids;
     
-                                        # forward through e2
             e2y.starts = lift(e2, gr.trim(e2x.preimage, 1))
             e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e2.link.id]
             e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
@@ -331,8 +334,8 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
             e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e1.link.id]
             e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
         
-            pad.right = abs(new.scale)[1]-width(pintersect(e2y.ends, e2y.image))
-            pad.left = abs(new.scale)[1]-width(pintersect(e2y.starts, e2y.image))
+            pad.right = abs(new.scale)[1] - width(pintersect(e2y.ends, e2y.image))
+            pad.left = abs(new.scale)[1] - width(pintersect(e2y.starts, e2y.image))
 
             ## flip pad right and pad left for neg sccale
             if (any(neg.map <- new.scale<0)){
@@ -428,7 +431,6 @@ setMethod("*", signature(e1 = "gChain", e2 = "GRanges"), function(e1, e2) {
     return(lift(e1, e2))
 })
 
-
 setMethod("*", signature(e1 = "gChain", e2 = "GRangesList"), function(e1, e2) {
     return(lift(e1, e2))
 })
@@ -442,6 +444,7 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' @name lift
 #' @title lift
 #' @description
+#'
 #' gChain lift
 #' gchain::lift
 #'
@@ -462,16 +465,17 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' if split.grl = T, grl outputs are split via grl.split according to (mapped) seqname and strand
 #'
 #' remaining args passed on to gr.findoverlaps
+#'
 #' @param x GRanges to lift through this chain
 #' @param split.grl flag whether or not to split output into GRangesList for GRangesList input
 #' @author Marcin Imielinski
 #' @export
-setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = F, pintersect = NA, by = NULL,  ...){
+setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = FALSE, pintersect = NA, by = NULL,  ...){
 
     verbose=FALSE
 
     if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData'))){
-        stop('output format can only be "GRanges", "GRangesList", "df", "df.all",  or "matrix"')
+        stop('Error: Output format can only be "GRanges", "GRangesList", "df", "df.all",  or "matrix"')
     }
 
     if (is(x, 'trackData')){
@@ -487,7 +491,7 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
     }
             
     if (is(x, 'GRangesList')){
-        input.grl = T
+        input.grl = TRUE
         grl.names = names(x);
         if (is.null(grl.names)){
             grl.names = as.character(1:length(x))
@@ -522,7 +526,7 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 
         format = 'GRanges';
     } else{
-        input.grl = F
+        input.grl = FALSE
     }
             
     if (is(x, 'IRanges')){
@@ -531,7 +535,7 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
 
             
     if (!inherits(x, 'GRanges')){
-        stop('x must be Granges object')              
+        stop('Error: x must be Granges object')              
     }
 
     if (length(.Object@.galx)>0){
@@ -723,6 +727,7 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
 })
 
 
+
 #' @name dim
 #' @title dim
 #' dimension of chain is @n x @m
@@ -803,7 +808,7 @@ setMethod('c', 'gChain', function(x, ...){
         args = c(list(x), list(...))
     }
     if (any(sapply(args, class) != 'gChain')){
-        stop('at least one of the objects to be concatanted is not a gChain')
+        stop('Error: At least one of the objects to be concatanted is not a gChain')
     }
 
     return(gChain(unlist(do.call('GRangesList', lapply(args, function(x) x@.galx))),
@@ -832,12 +837,12 @@ setMethod('c', 'gChain', function(x, ...){
 #' if space = Inf, then the Chain will map the entire sequence length (ie the whole chromosome)
 #' (of x or y, whichever is the largest for the given interval pair)
 #############################
-setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x = F, shift.y = T){
+setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x = FALSE, shift.y = TRUE){
     
     abs.scale = unique(abs(x@.scale))
 
     if (is.null(space)){
-              space = Inf;
+        space = Inf;
     }
             
     if (abs.scale<=1){
@@ -920,7 +925,9 @@ setReplaceMethod("values", signature(x= "gChain"), function(x, value){
 #' @name seqinfo
 #' @title seqinfo
 #' @description
+#'
 #' return seqinfo for gChain
+#'
 #' @export
 setMethod("seqinfo", signature(x = "gChain"), function(x){
     return(list(x = seqinfo(x@.galx), y = seqinfo(x@.galy)))
@@ -932,7 +939,9 @@ setMethod("seqinfo", signature(x = "gChain"), function(x){
 #' @name t
 #' @title t
 #' @description
+#'
 #' "transpose of chain" is flipping x and y variables (i.e. inverting the mapping)
+#'
 #' @export
 setMethod("t", signature(x = "gChain"), function(x){
     tmp.n = x@.n
@@ -953,6 +962,7 @@ setMethod("t", signature(x = "gChain"), function(x){
 #'@name breaks
 #' @title breaks 
 #'@description
+#'
 #' method to extract "breaks" from a gChain mapping genome x to y
 #' ie pairs of positions that are contiguous in y but were non-contiguous in x
 #'
@@ -961,6 +971,7 @@ setMethod("t", signature(x = "gChain"), function(x){
 #' 
 #' breaks are only defined in one direction (ie x to y)
 #' (if you want to do reverse then just "transpose" the chain, or use rev = TRUE)
+#'
 #' @export
 #############################
 setGeneric('breaks', function(x, ...) standardGeneric('breaks'))
@@ -1064,6 +1075,7 @@ setMethod('[', 'gChain', function(x, i){
     return(x)
 })
 
+
 gChain = function(...) new('gChain', ...)
 
 ######
@@ -1079,10 +1091,11 @@ gChain = function(...) new('gChain', ...)
 #' @title spChain
 #' @description
 #'
-#' takes (named) GRangesList and outputs gChain mapping to new genome where every
+#' Takes (named) GRangesList and outputs gChain mapping to new genome where every
 #' GRangesList item is a chromosome (e.g. named after that list item, such as transcript)
 #' and the local coordinates are determined the splicingthe ranges in the order (or reverse
 #' order as specified) of the ranges.
+#'
 #' @export
 spChain = function(grl, rev = FALSE){
 
@@ -1098,12 +1111,14 @@ spChain = function(grl, rev = FALSE){
     start.A = gr.df$start
     end.A = gr.df$end
     ##chr.B = gr.df$element
-    chr.B = as.character(gr.df$group) #3.1
+    chr.B = as.numeric(gr.df$group) #3.1
     str.tmp = structure(c('+', '-')[1+values(grl)$rev], names = names(grl))
     start.B = levapply(gr.df$width, chr.B, function(w) if (length(w)==1) 1 else cumsum(c(1, w[-length(w)])))
     end.B = start.B + gr.df$width-1
     str = str.tmp[chr.B]
-                                        #seqlengths = vaggregate(width ~ element, data = gr.df, sum)
+    ## seqlengths = data.table()
+    ## dt[, wanted.cols, by=...]
+    ## 
     seqlengths = vaggregate(width ~ group, data = gr.df, base::sum) #3.1
     intB = GRanges(chr.B, IRanges(start.B, end.B), seqlengths = seqlengths, strand = str)
   
@@ -1134,16 +1149,17 @@ paChain = function(seq1, seq2,
   sn2 = NULL, ## character vector of seqnames for seq2, should  be same length as seq2
   gr1 = NULL, ## GRanges corresponding to seq1, MUST be of same width, length, and names as seq1
   gr2 = NULL, ## GRanges corresponding to seq2, MUST be of same width, length, and names as seq2  
-  pa = NULL, verbose = T,
+  pa = NULL, 
+  verbose = TRUE,
   sl1 = NULL, ## seqlengths vector for seq1 (useful if provided seqs exist in larger set)
   sl2 = NULL, ## seqlengths vector for seq2 (useful if provdied seqs if exist in larger set)  
   score.thresh = NULL, ## optional numeric scalar specifying lowest score alignment to include in chain
-  both.strands = F, # both strands = T will try to align seq1 to both strands of seq2
-  keep.best = T, # if both.strands = T, keep.best = T will only keep the best seq2 alignment (forward vs backward) for each seq1
-  assume.dna = T, 
+  both.strands = FALSE, # both strands = T will try to align seq1 to both strands of seq2
+  keep.best = TRUE, # if both.strands = T, keep.best = T will only keep the best seq2 alignment (forward vs backward) for each seq1
+  assume.dna = TRUE, 
   mc.cores = 1, ## how many cores
   mc.chunks = mc.cores,  ## how many chunks to split the data when farming out to each core
-  pintersect=FALSE, ## calls to gr.findoverlaps (and to lift) use pintersect. See gr.findoverlaps. Best for small genomes (e.g. reads)
+  pintersect = FALSE, ## calls to gr.findoverlaps (and to lift) use pintersect. See gr.findoverlaps. Best for small genomes (e.g. reads)
   ...)
 {
 
@@ -1494,7 +1510,7 @@ paChain = function(seq1, seq2,
 #' @name cgChain
 #' @title cgChain
 #' @description
-#' cgChain (i.e. "CIGAR chain")
+#' cgChain (i.e. "CIGAR ")
 #'
 #' processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
 #' representing edit operations from subject to pattern.
@@ -1701,8 +1717,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
 #'
 #' @export
 #' @author Marcin Imielinski
-maChain = function(grl = NULL, pali, pad = 0, trim = T,
-  trim.thresh = 0 ### number between 0 and 1 specifying what percentage of alignments a position need to be present in in order to be retained in output coordinates
+maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### number between 0 and 1 specifying what percentage of alignments a position need to be present in in order to be retained in output coordinates
   )
 {
     ## will only make chain for a single alignment
@@ -1775,6 +1790,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = T,
 #' @name txChain
 #' @title txChain
 #' @description
+#' 
 #' Transcript chain
 #'
 #' Takes a GRangesList on genomic coordinates (ie exons comprising transcripts)
@@ -1782,7 +1798,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = T,
 #'
 #' @author Marcin Imielinski
 #' @export
-txChain = function(grl, txname = NULL, translate = F, exonFrame.field = 'exon_frame',
+txChain = function(grl, txname = NULL, translate = FALSE, exonFrame.field = 'exon_frame',
   val = NULL ## data frame of nrow = length(grl) specifying val to add to chain
   )
 {
@@ -2248,9 +2264,9 @@ permute = function(cycles){
 #
 ################################################
 rearrange = function(event, ## this is a GRanges representing breakpoints comprising an event
-  closed = T, # a "closed" event will connect the last breakpoint to the first
+  closed = TRUE, # a "closed" event will connect the last breakpoint to the first
   retain = 0, # whether or not to retain a breakpoint (i.e. an "amplification bridge) as part of the left or right breakpoint
-  filter.tel = T, # these intervals (e.g. telomeres, centromeres) represent essential intervals required to keep the chromosome following the transformation
+  filter.tel = TRUE, # these intervals (e.g. telomeres, centromeres) represent essential intervals required to keep the chromosome following the transformation
   filter.seg = NULL # if not null will also only filter contigs that map to a filter.seg segment (eg centromeres)  
   )
   {
@@ -2706,6 +2722,7 @@ gUnique = function(gc){
 #' @name squeeze
 #' @title squeeze
 #' @description
+#'
 #' "squeezes" pile of IRanges so that width(squeeze(ir)) = width(ir), end(ir[length(ir)]) = sum(width(ir)) + 1
 #' start(squeeze(ir)[k]) = end(squeeze(ir)[k-1])+1 for all k>1, and start(squeeze(ir))[1] = 1
 #'

@@ -8,7 +8,7 @@
 spChain(grl, rev = FALSE)
 }
 \description{
-takes (named) GRangesList and outputs gChain mapping to new genome where every
+Takes (named) GRangesList and outputs gChain mapping to new genome where every
 GRangesList item is a chromosome (e.g. named after that list item, such as transcript)
 and the local coordinates are determined the splicingthe ranges in the order (or reverse
 order as specified) of the ranges.
