@@ -8,5 +8,5 @@
 \S4method{[}{gChain,ANY,ANY,ANY}(x, i)
 }
 \description{
-subsetting links in a gChain, e.g. using features of the links metadata
+Subsetting links in a gChain, e.g. using features of the links metadata
 }

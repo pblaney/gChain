@@ -14,6 +14,7 @@ dt = data.table(seqnames=1, start=c(2,5,10), end=c(3,8,15))
 
 test_that('testing gChain() works', {
 
+    expect_true(is(gChain(), 'gChain'))
     expect_equal(length(gChain()), 1)
     ### dim()
     expect_equal(dim(gChain())[1], 0) 
@@ -25,6 +26,13 @@ test_that('testing gChain() works', {
     expect_equal(values(gChain()), data.frame())
     ## c()
     expect_equal(values(c(gChain(gr), gChain(gr2))), data.frame())
+    expect_equal(values(gChain(x = si, y = si)), data.frame())
+    expect_equal(values(gChain(x = GRanges(), y = NULL)), data.frame())
+    expect_equal(values(gChain(x = NULL, y = GRanges())), data.frame())
+    ## Error: At least one of the objects to be concatanted is not a gChain
+    expect_error(c(gChain(gr), c('foo')))
+
+
 
 })
 
@@ -51,15 +59,134 @@ test_that('testing lift() works', {
     foo = gChain(grl.unlist(grl2))
     expect_equal(length(lift(foo, grl.unlist(grl2))), 0)
     expect_equal(length(lift(foo, grl.unlist(grl2), split.grl = TRUE)), 0)
+    ## if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData'))){
+    expect_error(lift(foo, c(1))) ## Error in .local(.Object, x, ...) : Error: x must be Granges object
+    expect_equal(length(lift(foo, grl2)), 0)
+    expect_equal(length(lift(foo, IRanges(c(3,7,13), c(5,9,16)))), 0)
+
+})
+
+
+## cn
+
+test_that('testing cn() works', {
+
+    expect_equal(length(cn(gChain(grl2))), 0)
+    test = grl2
+    names(test) = NULL
+
+})
+
+
+
+## spChain 
+
+test_that('testing spChain() works', {
+
+    expect_equal(length(cn(spChain(grl2))), 0)
+    test = grl2
+    names(test) = NULL
+    expect_equal(length(spChain(test)), 1)
 
 })
 
 
 
 
+test_that('testing spChain() works', {
+
+    expect_equal(length(cn(gChain(grl2))), 0)
+
+})
+
+
+
+
+test_that('testing gSubset() works', {
+
+    expect_error( gSubset(c('foo')))
+    expect_equal(length(gSubset(gChain())), 1)
+
+})
+
+
+
+
+## txChain
+
+test_that('testing duplicate() works', {
+
+    expect_true(is(txChain(example_dnase), 'gChain'))
+    
+})
+
+
+
+
+### duplicate
+
+test_that('testing duplicate() works', {
+
+    expect_true(is(duplicate(grl.unlist(grl2)), 'gChain'))
+    
+})
+
+
+
+
+
+### copy
+
+test_that('testing copy() works', {
+
+    expect_true(is(copy(grl.unlist(grl2)), 'gChain'))
+    expect_equal(length(copy(grl.unlist(grl2))), 1)
+    
+})
+
+
+
+
+### delete
+
+test_that('testing delete() works', {
+
+    expect_true(is(delete(grl.unlist(grl2)), 'gChain'))
+    expect_equal(length(delete(grl.unlist(grl2))), 1)
+    
+})
+
+
+
+### invert
+
+test_that('testing invert() works', {
+    
+    expect_true(is(invert(grl.unlist(grl2)), 'gChain'))
+    expect_equal(length(invert(grl.unlist(grl2))), 1)
+
+})
+
+
+
+test_that('testing permute() works', {
+
+    expect_error(permute(grl2), NA) ## check works
+    expect_equal(length(permute(grl2)), 1)
+
+})
+
+
 ## > rearrange(event = gr2)
 ## Error in `[<-`(`*tmp*`, ix.n, value = tmp[ix.n]) : 
 ##   subscript out of bounds
+
+test_that('testing rearrange() works', {
+    
+    ## Error in gr.flipstrand(event[-1]) : Error: GRanges input only
+    expect_error(rearrange(grl1))
+
+})
 
 
 
@@ -71,6 +198,16 @@ test_that('testing lift() works', {
 ### 
 ### Error: subscript contains invalid names
 ### 
+
+test_that('testing bfb() works', {
+
+    expect_error(bfb('1'))
+
+})
+
+
+
+
 
 ### utility functions
 
@@ -95,11 +232,36 @@ test_that('testing ir2vec() works', {
 })
 
 
+## > gCat(foo1, foo2)
+## Error in c(x, list(...)) : 
+##   Error: At least one of the objects to be concatanted is not a gChain
+
+
+test_that('testing gCat() works', {
+
+    expect_error(gCat(foo1, foo2)) ### shouldn't be an error
+
+})
+
+
+
+test_that('testing gUnique() works', {
+
+    expect_true(is(gUnique(gChain()), 'gChain'))
+
+})
+
+
+
+
 test_that('testing squeeze() works', {
 
     gr = GRanges(1, IRanges(c(3,7,13), c(5,9,16)), strand=c('+','-','-'), seqinfo=Seqinfo("1", 25), name=c("A","B","C"))
     expect_error(squeeze(gr))
     ir1 = IRanges(c(3,7,13), c(5,9,16))
+    expect_equal(width(squeeze(ir1))[1], 3)
+    expect_equal(width(squeeze(ir1))[3], 4)
+    expect_equal(squeeze(IRanges()), IRanges())
 
 
 })
@@ -163,4 +325,13 @@ test_that('gr.refactor() works', {
     expect_equal(as.character(seqnames(gr.refactor(gr2, sn = c('chr2', 'foo'))))[2], 'foo')
 
 })
+
+
+
+test_that('gr.tostring() works', {
+
+    expect_true(is(gr.tostring(gr2), 'character'))
+
+})
+
 

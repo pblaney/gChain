@@ -417,6 +417,7 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
 #' @name gMultiply
 #' @title gMultiply
 #' @description
+#'
 #' gChain multiply
 #' gchain::multiply
 #'
@@ -734,7 +735,9 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
 
 #' @name dim
 #' @title dim
+#'
 #' dimension of chain is @n x @m
+#'
 #' @export
 setMethod("dim", signature(x = "gChain"), function(x) return(c(x@.n, x@.m)))
 
@@ -743,6 +746,7 @@ setMethod("dim", signature(x = "gChain"), function(x) return(c(x@.n, x@.m)))
 
 #' @name links
 #' @title links
+#'
 #' returns links associated with chain
 #'
 #' @export
@@ -756,7 +760,9 @@ setMethod("links", signature(.Object = "gChain"), function(.Object){
 #' @name values
 #' @title values
 #' @description
-#' print meta data of gChain
+#'
+#' Print meta data of gChain
+#'
 setMethod("values", signature(x= "gChain"), function(x){
     return(x@values)
 })
@@ -767,7 +773,9 @@ setMethod("values", signature(x= "gChain"), function(x){
 #' @name values
 #' @title values
 #' @description
-#' get scale of gChain
+#'
+#' Get scale of gChain
+#'
 setMethod("scale", signature(x= "gChain"), function(x){
     return(unique(abs(x@.scale)))
 })
@@ -778,7 +786,9 @@ setMethod("scale", signature(x= "gChain"), function(x){
 #' @name values
 #' @title values
 #' @description
-#' get pads of gChain
+#'
+#' Get pads of gChain
+#'
 setGeneric('pads', function(.Object, ...) standardGeneric('pads'))
 setMethod("pads", signature(.Object = "gChain"), function(.Object){
     return(data.frame(pad.left = .Object@.pad.left, pad.right = .Object@.pad.right, stringsAsFactors = F))
@@ -790,7 +800,9 @@ setMethod("pads", signature(.Object = "gChain"), function(.Object){
 #' @name genomes
 #' @title genomes
 #' @description
+#'
 #' return seqinfos associated with domain and range genome of gChain
+#'
 setGeneric('genomes', function(.Object, ...) standardGeneric('genomes'))
 setMethod("genomes", signature(.Object = "gChain"), function(.Object){
     return(lapply(seqinfo(.Object), seqinfo2gr))
@@ -808,8 +820,10 @@ setMethod('$', 'gChain', function(x, name){
 #' @name c
 #' @title c
 #' @description
-#' concatenate gChains, i.e. concatenate their links
+#'
+#' Concatenate gChains, i.e. concatenate their links
 #' they must have the same domain and range genome
+#'
 #' @export
 setMethod('c', 'gChain', function(x, ...){
 
@@ -834,6 +848,7 @@ setMethod('c', 'gChain', function(x, ...){
 #' @name expand
 #' @title expand
 #' @description
+#'
 #' GChain::expand
 #'
 #' Expands gChain by "space" base pairs.   By default will pad the x intervals with space and pad and shift the y intervals,
@@ -847,6 +862,7 @@ setMethod('c', 'gChain', function(x, ...){
 #'
 #' if space = Inf, then the Chain will map the entire sequence length (ie the whole chromosome)
 #' (of x or y, whichever is the largest for the given interval pair)
+#'
 #############################
 setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x = FALSE, shift.y = TRUE){
     
@@ -939,7 +955,7 @@ setReplaceMethod("values", signature(x= "gChain"), function(x, value){
 #' @title seqinfo
 #' @description
 #'
-#' return seqinfo for gChain
+#' Return seqinfo for gChain
 #'
 #' @export
 setMethod("seqinfo", signature(x = "gChain"), function(x){
@@ -972,17 +988,17 @@ setMethod("t", signature(x = "gChain"), function(x){
 
 
 #############################
-#'@name breaks
+#' @name breaks
 #' @title breaks 
-#'@description
+#' @description
 #'
-#' method to extract "breaks" from a gChain mapping genome x to y
-#' ie pairs of positions that are contiguous in y but were non-contiguous in x
+#' Method to extract "breaks" from a gChain mapping genome x to y
+#' i.e. pairs of positions that are contiguous in y but were non-contiguous in x
 #'
-#' returns a GRangesList in genome x containing the location of pairs of positions
+#' Returns a GRangesList in genome x containing the location of pairs of positions
 #' that are contiguous in y that were not contiguous in x.
 #' 
-#' breaks are only defined in one direction (ie x to y)
+#' Breaks are only defined in one direction (ie x to y)
 #' (if you want to do reverse then just "transpose" the chain, or use rev = TRUE)
 #'
 #' @export
@@ -1028,10 +1044,9 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
     qid = seed.l$query.id
     qix = seed.l$query.start
     id = 1:length(seed.l)            
-    ij = do.call('rbind', lapply(broken.id, function(x)
-    {
-      y = which(qid==x); z = qix[y]; zy1 = y[z==1]; zy2 = y[z==2];
-      return(cbind(rep(zy1, length(zy2)), rep(zy2, each = length(zy1))))
+    ij = do.call('rbind', lapply(broken.id, function(x){
+        y = which(qid==x); z = qix[y]; zy1 = y[z==1]; zy2 = y[z==2];
+        return(cbind(rep(zy1, length(zy2)), rep(zy2, each = length(zy1))))
     }));
 
     keep = (end(seed.l)[ij[,2]] - start(seed.l)[ij[,1]])!=1 | as.logical(seqnames(seed.l)[ij[,2]] != seqnames(seed.l)[ij[,1]])
@@ -1050,12 +1065,14 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
 #' @name cn
 #' @title cn
 #' @description
-#' a method to extract copy number from a chain mapping genome x to y
 #'
-#' returns a GRanges in genome x specifying the number of copies of every interval
+#' A method to extract copy number from a chain mapping genome x to y
+#'
+#' Returns a GRanges in genome x specifying the number of copies of every interval
 #' in x that are contained in y
 #'
 #' as "breaks" only goes in the "forward" direction
+#'
 #' @export
 setGeneric('cn', function(x, ...) standardGeneric('cn'))
 setMethod("cn", signature(x = "gChain"), function(x, rev = FALSE){
@@ -1076,7 +1093,9 @@ setMethod("cn", signature(x = "gChain"), function(x, rev = FALSE){
 #' @name [
 #' @title [
 #' @description
-#' subsetting links in a gChain, e.g. using features of the links metadata
+#' 
+#' Subsetting links in a gChain, e.g. using features of the links metadata
+#' 
 #' @export
 setMethod('[', 'gChain', function(x, i){
     x@.galx = x@.galx[i]
@@ -1094,7 +1113,9 @@ setMethod('[', 'gChain', function(x, i){
 #' @name gChain
 #' @title gChain
 #' @description
+#'
 #' instantiate a new gChain
+#'
 #' @export
 gChain = function(x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame()) new('gChain', x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame())
 
@@ -1127,34 +1148,37 @@ spChain = function(grl, rev = FALSE){
     values(grl)$rev = rev;
   
 
-  gr.dt = as.data.table(grl)
-  intA = GRanges(as.character(gr.dt$seqnames), IRanges(gr.dt$start, gr.dt$end), gr.dt$strand, seqlengths = seqlengths(grl))
+    gr.dt = as.data.table(grl)
+    intA = GRanges(as.character(gr.dt$seqnames), IRanges(gr.dt$start, gr.dt$end), gr.dt$strand, seqlengths = seqlengths(grl))
 
-  out.dt = gr.dt[, .(
-      chr.A = seqnames,
-      start.A = start,
-      end.A = end,
-      width,
-      chr.B = group_name,
-      str = ifelse(rep(values(grl)$rev, elementNROWS(grl)), '-', '+')
-      )]
+    out.dt = gr.dt[, .(
+        chr.A = seqnames,
+        start.A = start,
+        end.A = end,
+        width,
+        chr.B = group_name,
+        str = ifelse(rep(values(grl)$rev, elementNROWS(grl)), '-', '+')
+    )]
   
-  out.dt[, start.B := if (length(width)==1) 1 else cumsum(c(1, width[-length(width)])), by = chr.B]
-  out.dt[, end.B := start.B + width-1]
+    out.dt[, start.B := if (length(width)==1) 1 else cumsum(c(1, width[-length(width)])), by = chr.B]
+    out.dt[, end.B := start.B + width-1]
 
-  seqlengths = gr.dt[, sum(width), by = group_name][, structure(V1, names = group_name)]
-  intB = GRanges(out.dt$chr.B, IRanges(out.dt$start.B, out.dt$end.B), seqlengths = seqlengths, strand = out.dt$str)
+    seqlengths = gr.dt[, sum(width), by = group_name][, structure(V1, names = group_name)]
+    intB = GRanges(out.dt$chr.B, IRanges(out.dt$start.B, out.dt$end.B), seqlengths = seqlengths, strand = out.dt$str)
   
-  return(gChain(intA, intB))
+    return(gChain(intA, intB))
 } 
+
+
 
 
 #' @name paChain
 #' @title paChain
 #' @description
-#' make chain from pairwiseAlignment object
 #' 
-#' each BSStringSet must have named sequences (otherwise names will be computed
+#' Make chain from pairwiseAlignment object
+#' 
+#' Each BSStringSet must have named sequences (otherwise names will be computed
 #' from (perfectly unique) sequences.  Each name can only map to a single sequence
 #' 
 #' NOTE: if XStringSet objects are not provided, then the input is assumed to be DNA
@@ -1163,8 +1187,9 @@ spChain = function(grl, rev = FALSE){
 #' Pre-computed pa object can be also provided, but then the sequences from which the
 #' pa object was computed should be given as well.
 #'
-#' returns gChain with seqinfos corresponding to unique seqnames in seq1 and seq2
+#' Returns gChain with seqinfos corresponding to unique seqnames in seq1 and seq2
 #' and the interval pairs mapping those two sequences
+#' 
 #' @export
 #' @author Marcin Imielinski
 paChain = function(seq1, seq2,
@@ -1613,10 +1638,10 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
         message('Parsing CIGARs\n')
     }
 
-    #suppressWarnings(cigar.s <- splitCigar(cigar))
-    #suppressWarnings(cigar.s <- explodeCigarOpLengths(cigar))
-    cigar.m <- explodeCigarOps(cigar)
-    cigar.l <- explodeCigarOpLengths(cigar)
+    #suppressWarnings(cigar.s <- explodesplitCigar(cigar))
+    #suppressWarnings(cigar.s <- CigarOpLengths(cigar))
+    cigar.m <- GenomicAlignments::explodeCigarOps(cigar)
+    cigar.l <- GenomicAlignments::explodeCigarOpLengths(cigar)
     
     ## reverse CIGARs for ranges mapped to the negative strand
     if (!is.null(gr))
@@ -1722,6 +1747,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
 #' @name maChain
 #' @title maChain
 #' @description
+#'
 #' multiple sequence alignment chain
 #'
 #' Takes input GRanges List of interval coordinates corresponding to sequences
@@ -1820,7 +1846,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
 #' 
 #' Transcript chain
 #'
-#' Takes a GRangesList on genomic coordinates (ie exons comprising transcripts)
+#' Takes a GRangesList on genomic coordinates (i.e. exons comprising transcripts)
 #' and creates a gChain representing mapping onto transcript (or translated protein) coordinates
 #'
 #' @author Marcin Imielinski
@@ -1935,7 +1961,7 @@ txChain = function(grl, txname = NULL, translate = FALSE, exonFrame.field = 'exo
 ############################################
 duplicate = function(gr, mult = 1, dup.string = 'copy'){
     if (sum(as.numeric(width(reduce(gr)))) != sum(as.numeric(width(gr)))){
-        stop('Error: Input ranges  must be nonoverlapping')
+        stop('Error: Input ranges must be nonoverlapping')
     }
     return(copy(gr, gr.start(gr), mult = mult, dup.string = dup.string))
 }
@@ -1968,9 +1994,8 @@ duplicate = function(gr, mult = 1, dup.string = 'copy'){
 # 
 ############################################
 copy = function(from, ## granges of source intervals
-  to = NULL, ## granges of target intervals to copy into, or characters vector specifying 'neochromosomes' to copy into
-             ## if null, then names of neochromosomes will be automatically created
-  mult = 1, dup.string = 'copy')
+        to = NULL, ## granges of target intervals to copy into, or characters vector specifying 'neochromosomes' to copy into ## if null, then names of neochromosomes will be automatically created
+        mult = 1, dup.string = 'copy')
 {
     genomeA = seqinfo(from)
     old.lens = structure(seqlengths(genomeA), names = seqnames(genomeA))
@@ -2314,7 +2339,6 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
 
     if (closed){
         bp1 = c(bp1, event[length(event)])
-
         bp2 = c(bp2, gr.flipstrand(event[1]))
     }
         
@@ -2395,35 +2419,35 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
     pp = (sgn1*sgn2)>0 & sgn1>0;
     mm = (sgn1*sgn2)>0 & sgn1<0;
     mp = sgn1>0 & sgn2<0
-    ab.pairs[pp,1] = -ab.pairs[pp,1] # ++ breakpoints --> (-b)d adjacency
-    ab.pairs[mm,2] = -ab.pairs[mm,2] # -- breakpoints --> a(-c) adjacency
-    ab.pairs[mp, ] = -ab.pairs[mp, ] # +- breakpoints --> (-b)(-c) adjacency
+    ab.pairs[pp,1] = -ab.pairs[pp,1] ## ++ breakpoints --> (-b)d adjacency
+    ab.pairs[mm,2] = -ab.pairs[mm,2] ## -- breakpoints --> a(-c) adjacency
+    ab.pairs[mp, ] = -ab.pairs[mp, ] ## +- breakpoints --> (-b)(-c) adjacency
     
-    # clean up adj pairs
-    # remove any that have crossed a chromosome boundary from their breakpoint
-    # this will occur in cases of badly formed breakpoint input (eg breakpoints that point outward
-    # from their telomeres)        
+    ## clean up adj pairs
+    ## remove any that have crossed a chromosome boundary from their breakpoint
+    ## this will occur in cases of badly formed breakpoint input (eg breakpoints that point outward
+    ## from their telomeres)        
     keep = as.logical((seqnames(tile)[abs(ab.pairs[,1])]==seqnames(bp1)) & (seqnames(tile)[abs(ab.pairs[,2])]==seqnames(bp2))) & !tile$is.bp[abs(ab.pairs[,1])] & !tile$is.bp[abs(ab.pairs[,2])]
     ab.pairs = ab.pairs[keep, , drop = FALSE];
     ab.pairs = rbind(ab.pairs, cbind(-ab.pairs[,2], -ab.pairs[,1]));
     
-    # flag any segments flanking a breakpoint
+    ## flag any segments flanking a breakpoint
     left.good = as.logical(seqnames(tile)[pmin(length(tile), bpix-1)] == seqnames(tile)[bpix])
     right.good = as.logical(seqnames(tile)[pmin(bpix+1, length(tile))] == seqnames(tile)[bpix])
     values(tile)$flag = (1:length(tile)) %in% c(bpix[left.good]-1, bpix[right.good]+1)
     
-    # build "aberrant" adjacency matrix representing directed graph of edges connecting
-    # <signed> nodes.
+    ## build "aberrant" adjacency matrix representing directed graph of edges connecting
+    ## <signed> nodes.
     adj.ab = matrix(FALSE, nrow = 2*length(tile), ncol = 2*length(tile), dimnames = rep(list(as.character(c(1:length(tile), -(1:length(tile))))), 2)) 
     tmp = table(ab.pairs[,1], ab.pairs[,2])
 
     if (nrow(tmp)>0){
-        ix = which(tmp!=0, arr.ind = T);
+        ix = which(tmp!=0, arr.ind = TRUE);
         ix.n = cbind(rownames(tmp)[ix[,1]], colnames(tmp)[ix[,2]])
         adj.ab[ix.n] = tmp[ix.n];
     }
     
-    # build reference adjacency matrix (representing consecutive segments on the reference genome)
+    ## build reference adjacency matrix (representing consecutive segments on the reference genome)
     seg.ix = which(!tile$is.bp)
     ref.pairs = cbind(seg.ix[1:(length(seg.ix)-1)], seg.ix[2:(length(seg.ix))])
     ref.pairs = ref.pairs[ref.pairs[,1]>0 & ref.pairs[,2]!=length(tile), , drop = FALSE]
@@ -2432,7 +2456,7 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
       
     adj.ref = matrix(FALSE, nrow = 2*length(tile), ncol = 2*length(tile), dimnames = rep(list(as.character(c(1:length(tile), -(1:length(tile))))), 2))
     tmp = table(ref.pairs[,1], ref.pairs[,2])
-    ix = which(tmp!=0, arr.ind = T);
+    ix = which(tmp!=0, arr.ind = TRUE);
     ix.n = cbind(rownames(tmp)[ix[,1]], colnames(tmp)[ix[,2]])
     adj.ref[ix.n] = tmp[ix.n];
 
@@ -2744,7 +2768,6 @@ gUnique = function(gc){
     suppressWarnings(out <- new('gChain', x=lix[gcx$id], y=liy[gcx$id]))
   
     return(out)
-  
 }
 
 
@@ -3008,3 +3031,21 @@ gr.refactor = function(gr, sn, gap = 0, rev = FALSE){
 
     return(out)
 }
+
+
+#' gr.tostring
+#'
+#' dumps out a quick text representation of a gr object (ie a character vector)
+#'
+#' @param gr \code{GRanges}
+#' @param places Number of decimal places. Default 2
+#' @param interval Default 1e6
+#' @param unit Default "MB"
+#' @param prefix Default "chr"
+#' @return text representation of input
+gr.tostring = function(gr, places = 2, interval = 1e6, unit = 'MB', prefix = 'chr'){
+    p1 = round(start(gr)/interval, places);
+    p2 = round(end(gr)/interval, places);
+    return(paste(prefix, as.character(seqnames(gr)), ':', p1, '-', p2, ' ', unit, sep = ''));
+}
+

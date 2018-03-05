@@ -11,9 +11,9 @@ paChain(seq1, seq2, sn1 = NULL, sn2 = NULL, gr1 = NULL, gr2 = NULL,
   pintersect = FALSE, ...)
 }
 \description{
-make chain from pairwiseAlignment object
+Make chain from pairwiseAlignment object
 
-each BSStringSet must have named sequences (otherwise names will be computed
+Each BSStringSet must have named sequences (otherwise names will be computed
 from (perfectly unique) sequences.  Each name can only map to a single sequence
 
 NOTE: if XStringSet objects are not provided, then the input is assumed to be DNA
@@ -22,7 +22,7 @@ NOTE: if XStringSet objects are not provided, then the input is assumed to be DN
 Pre-computed pa object can be also provided, but then the sequences from which the
 pa object was computed should be given as well.
 
-returns gChain with seqinfos corresponding to unique seqnames in seq1 and seq2
+Returns gChain with seqinfos corresponding to unique seqnames in seq1 and seq2
 and the interval pairs mapping those two sequences
 }
 \author{

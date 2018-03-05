@@ -14,9 +14,9 @@
 pads(.Object, ...)
 }
 \description{
-print meta data of gChain
+Print meta data of gChain
 
-get scale of gChain
+Get scale of gChain
 
-get pads of gChain
+Get pads of gChain
 }

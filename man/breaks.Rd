@@ -7,12 +7,12 @@
 breaks(x, ...)
 }
 \description{
-method to extract "breaks" from a gChain mapping genome x to y
-ie pairs of positions that are contiguous in y but were non-contiguous in x
+Method to extract "breaks" from a gChain mapping genome x to y
+i.e. pairs of positions that are contiguous in y but were non-contiguous in x
 
-returns a GRangesList in genome x containing the location of pairs of positions
+Returns a GRangesList in genome x containing the location of pairs of positions
 that are contiguous in y that were not contiguous in x.
 
-breaks are only defined in one direction (ie x to y)
+Breaks are only defined in one direction (ie x to y)
 (if you want to do reverse then just "transpose" the chain, or use rev = TRUE)
 }

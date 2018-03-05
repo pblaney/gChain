@@ -4,6 +4,7 @@
 \name{dim}
 \alias{dim}
 \title{dim
+
 dimension of chain is @n x @m}
 \usage{
 \S4method{dim}{gChain}(x)

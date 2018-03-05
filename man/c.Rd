@@ -8,6 +8,6 @@
 \S4method{c}{gChain}(x, ...)
 }
 \description{
-concatenate gChains, i.e. concatenate their links
+Concatenate gChains, i.e. concatenate their links
 they must have the same domain and range genome
 }

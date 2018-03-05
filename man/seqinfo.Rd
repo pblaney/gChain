@@ -8,5 +8,5 @@
 \S4method{seqinfo}{gChain}(x)
 }
 \description{
-return seqinfo for gChain
+Return seqinfo for gChain
 }
