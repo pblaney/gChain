@@ -16,7 +16,8 @@ Depends:
     rtracklayer        
 Imports:
     gUtils,
-    GenomicAlignments
+    GenomicAlignments, 
+    Biostrings
 Suggests:
     BSgenome.Hsapiens.UCSC.hg19,
     testthat,

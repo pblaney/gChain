@@ -12,10 +12,14 @@ gr2 = GRanges(1, IRanges(c(1,9), c(6,14)), strand=c('+','-'), seqinfo=Seqinfo("1
 dt = data.table(seqnames=1, start=c(2,5,10), end=c(3,8,15))
 
 
+
+
+
 test_that('testing gChain() works', {
 
     expect_true(is(gChain(), 'gChain'))
     expect_equal(length(gChain()), 1)
+    expect_equal(width(gChain()$x), 0)
     ### dim()
     expect_equal(dim(gChain())[1], 0) 
     expect_equal(dim(gChain())[2], 0)
@@ -29,27 +33,14 @@ test_that('testing gChain() works', {
     expect_equal(values(gChain(x = si, y = si)), data.frame())
     expect_equal(values(gChain(x = GRanges(), y = NULL)), data.frame())
     expect_equal(values(gChain(x = NULL, y = GRanges())), data.frame())
+    expect_equal(values(c(gChain())), data.frame())
     ## Error: At least one of the objects to be concatanted is not a gChain
     expect_error(c(gChain(gr), c('foo')))
-
-
-
+    ## check 'show()' works
+    expect_error(show(gChain()), NA)
 })
 
 
-### gMultiply BUG
-## > foo = gChain(grl.unlist(grl2))
-## > foobar = foo = gChain(grl.unlist(grl1))
-## > foo * foobar
-## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
-## > gMultiply(foo, foobar)
-## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
-## > 
-
-
-### > expand(gChain(grl.unlist(grl2)))
-### Error in gr.pad(x@.galx, cbind((1/abs.scale) * left.space, (1/abs.scale) *  : 
-###   could not find function "gr.pad"
 
 
 
@@ -67,6 +58,78 @@ test_that('testing lift() works', {
 })
 
 
+
+test_that('testing scale()) works', {
+
+    expect_equal(scale(gChain()), 1)
+
+})
+
+
+
+
+
+test_that('testing pads()) works', {
+
+    expect_equal(pads(gChain())$pad.left, 0)
+    expect_equal(pads(gChain())$pad.right, 0)
+
+})
+
+
+
+
+test_that('testing genomes()) works', {
+
+    expect_equal(width(genomes(gChain())$x), 0)
+    expect_equal(width(genomes(gChain())$y), 0)
+
+})
+
+
+
+
+
+### gMultiply BUG
+## > foo = gChain(grl.unlist(grl2))
+## > foobar = foo = gChain(grl.unlist(grl1))
+## > foo * foobar
+## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
+## > gMultiply(foo, foobar)
+## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
+## > 
+
+
+test_that('testing expand() works', {
+
+    expect_true(is(expand(gChain(grl.unlist(grl2))), 'gChain'))
+
+})
+
+
+
+
+
+test_that('testing t() works', {
+
+    expect_true(is(t(gChain()), 'gChain'))
+
+})
+
+
+
+
+
+test_that('testing breaks() works', {
+
+    ### BUG
+    expect_error(breaks(gChain()))
+    expect_error(breaks(gChain(grl.unlist(grl2))))
+    #### Error in gr.start(x@.galy, 2) - 1 : 
+    ####   adjustment would result in ranges with negative widths
+
+})
+
 ## cn
 
 test_that('testing cn() works', {
@@ -77,6 +140,16 @@ test_that('testing cn() works', {
 
 })
 
+
+## setMethod('[', 'gChain', function(x, i){
+
+test_that('testing [ works', {
+
+    expect_true(is(gChain()[1], 'gChain'))
+    ## Error: subscript contains out-of-bounds indices
+    expect_error(gChain()[2])
+
+})
 
 
 ## spChain 
@@ -112,7 +185,16 @@ test_that('testing gSubset() works', {
 
 ## paChain()
 
-## 
+test_that('testing paChain() works', {
+
+    ##s1 = DNAString("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG")
+    ##s2 = DNAString("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")
+    ##pa = pairwiseAlignment(s1, s2)
+    ### BUG
+    ## Error in nchar(pa) : no method for coercing this S4 class to a vector
+    expect_error(paChain('ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG', 'GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC'))
+
+})
 
 
 
@@ -121,7 +203,15 @@ test_that('testing gSubset() works', {
 
 ## cgChain()
 
-## cgChain('18M2D19M'
+test_that('testing duplicate() works', {
+
+    ## BUG
+    ## Error in .(chr.A = seqnames, start.A = start, end.A = end, width, chr.B = group_name,  : 
+    ##   could not find function "."
+    expect_error(cgChain('18M2D19M'))
+    
+})
+
 
 
 

@@ -770,8 +770,8 @@ setMethod("values", signature(x= "gChain"), function(x){
 
 
 
-#' @name values
-#' @title values
+#' @name scale
+#' @title scale
 #' @description
 #'
 #' Get scale of gChain
@@ -783,8 +783,8 @@ setMethod("scale", signature(x= "gChain"), function(x){
 
 
 
-#' @name values
-#' @title values
+#' @name pads
+#' @title pads
 #' @description
 #'
 #' Get pads of gChain
