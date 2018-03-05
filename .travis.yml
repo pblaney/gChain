@@ -17,6 +17,7 @@ install:
   - ./travis-tool.sh install_bioc BSgenome.Hsapiens.UCSC.hg19
   - ./travis-tool.sh install_deps
   - ./travis-tool.sh install_github r-lib/covr
+  - ./travis-tool.sh install_github mskilab/gUtils
 
 script: ./travis-tool.sh run_tests
 

@@ -110,6 +110,19 @@ test_that('testing gSubset() works', {
 })
 
 
+## paChain()
+
+## 
+
+
+
+
+
+
+## cgChain()
+
+## cgChain('18M2D19M'
+
 
 
 ## txChain
