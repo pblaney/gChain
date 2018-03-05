@@ -12,7 +12,8 @@ gr2 = GRanges(1, IRanges(c(1,9), c(6,14)), strand=c('+','-'), seqinfo=Seqinfo("1
 dt = data.table(seqnames=1, start=c(2,5,10), end=c(3,8,15))
 
 
-
+i1 = IRanges(c(3,7,13), c(5,9,16))
+i2 = IRanges(c(1,9, 32), c(6,14, 45))
 
 
 test_that('testing gChain() works', {
@@ -38,6 +39,52 @@ test_that('testing gChain() works', {
     expect_error(c(gChain(gr), c('foo')))
     ## check 'show()' works
     expect_error(show(gChain()), NA)
+    ## if (length(x)>0 & length(y)>0 & length(x) != length(y)){
+    expect_error(gChain(gr, gr2))
+    ##  if (is(x, 'IRanges')){
+    expect_equal(dim(gChain(x = i1))[1], 16)
+    expect_equal(dim(gChain(x = i1))[2], 16)
+    ##  if (is(y, 'IRanges')){
+    expect_equal(dim(gChain(y = i2))[1], 45)
+    expect_equal(dim(gChain(y = i2))[2], 45)
+    ##  Error in validObject(.Object) : 
+    ##    invalid class “gChain” object: 1: All intervals pairs must have a single scale
+    ##  invalid class “gChain” object: 2: Scales not consistent with interval pair widths and .pad.left / .pad.right properties.
+    expect_error(gChain(i2, i1))
+    ## if (!is(x, 'GRanges') | !is(y, 'GRanges')){
+    ## Error: inputs to gChain() must be of the type GRanges
+    expect_error(gChain(grl2))
+    expect_equal(dim(gChain(gr[1:2], gr2, val = 42))[1], 25)
+    ## if (ncol(val)>0 & nrow(val)==1){
+    expect_equal(dim(gChain(gr[1:2], gr2, val = data.frame(c(42))))[1], 25)
+
+})
+
+
+
+
+
+
+##test_that('testing gMultiply()) works', {
+
+    ## foo1 = gChain(grl.unlist(grl1), grl.unlist(grl2)[1:500]) 
+    ## foo2 = gChain(example_dnase[1:200])
+    ### multiplied = gMultiply(foo1, foo2)
+    ## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
+
+## })
+
+
+
+
+
+
+
+
+test_that('testing scale()) works', {
+
+    expect_equal(scale(gChain()), 1)
+
 })
 
 
@@ -138,6 +185,7 @@ test_that('testing cn() works', {
     test = grl2
     names(test) = NULL
     expect_equal(length(cn(gChain(grl.unlist(grl2)))), 1029) 
+    expect_equal(length(cn(gChain(grl.unlist(grl2)), rev=TRUE)), 1029)
 
 })
 
@@ -177,6 +225,7 @@ test_that('testing paChain() works', {
     ### BUG
     ## Error in nchar(pa) : no method for coercing this S4 class to a vector
     expect_error(paChain('ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG', 'GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC'))
+    expect_error(paChain(DNAString("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG"), DNAString("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")))
 
 })
 
@@ -358,6 +407,13 @@ test_that('testing squeeze() works', {
 ### grl.split BUG; 
 ## ele = tryCatch(as.data.frame(grl)$element, error = function(e) e)
 ## NULL
+
+test_that('grl.split() works', {
+
+    expect_error(grl.split(grl2))
+
+})
+
 
 
 ## levapply()
