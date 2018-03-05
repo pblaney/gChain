@@ -48,11 +48,11 @@ test_that('testing lift() works', {
 
     expect_equal(length(gChain()), 1)
     foo = gChain(grl.unlist(grl2))
-    expect_equal(length(lift(foo, grl.unlist(grl2))), 0)
-    expect_equal(length(lift(foo, grl.unlist(grl2), split.grl = TRUE)), 0)
+    expect_equal(length(lift(foo, grl.unlist(grl2))), 502)
+    expect_equal(length(lift(foo, grl.unlist(grl2), split.grl = TRUE)), 502)
     ## if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData'))){
     expect_error(lift(foo, c(1))) ## Error in .local(.Object, x, ...) : Error: x must be Granges object
-    expect_equal(length(lift(foo, grl2)), 0)
+    expect_equal(length(lift(foo, grl2)), 251)
     expect_equal(length(lift(foo, IRanges(c(3,7,13), c(5,9,16)))), 0)
 
 })
@@ -134,9 +134,10 @@ test_that('testing breaks() works', {
 
 test_that('testing cn() works', {
 
-    expect_equal(length(cn(gChain(grl2))), 0)
+    expect_equal(length(cn(gChain(grl.unlist(grl2)))), 1029)
     test = grl2
     names(test) = NULL
+    expect_equal(length(cn(gChain(grl.unlist(grl2)))), 1029) 
 
 })
 
@@ -154,23 +155,6 @@ test_that('testing [ works', {
 
 ## spChain 
 
-test_that('testing spChain() works', {
-
-    expect_equal(length(cn(spChain(grl2))), 0)
-    test = grl2
-    names(test) = NULL
-    expect_equal(length(spChain(test)), 1)
-
-})
-
-
-
-
-test_that('testing spChain() works', {
-
-    expect_equal(length(cn(gChain(grl2))), 0)
-
-})
 
 
 
@@ -208,7 +192,9 @@ test_that('testing duplicate() works', {
     ## BUG
     ## Error in .(chr.A = seqnames, start.A = start, end.A = end, width, chr.B = group_name,  : 
     ##   could not find function "."
-    expect_error(cgChain('18M2D19M'))
+    cigarfoo = cgChain('18M2D19M')
+    expect_true(is(cigarfoo, 'gChain'))
+    expect_equal(length(cigarfoo), 1)
     
 })
 
@@ -327,7 +313,7 @@ test_that('testing vec2ir() works', {
 
 test_that('testing ir2vec() works', {
 
-	gr = GRanges(1, IRanges(c(3,7,13), c(5,9,16)), strand=c('+','-','-'), seqinfo=Seqinfo("1", 25), name=c("A","B","C"))
+    gr = GRanges(1, IRanges(c(3,7,13), c(5,9,16)), strand=c('+','-','-'), seqinfo=Seqinfo("1", 25), name=c("A","B","C"))
     expect_equal(length(ir2vec(gr)), 10)
     expect_equal(ir2vec(gr)[1], 3)
     expect_equal(ir2vec(gr)[10], 16)
@@ -391,14 +377,14 @@ test_that('levapply() works', {
 
 test_that('seqinfo2gr() works', {
 
-	gr = GRanges(1, IRanges(c(3,7,13), c(5,9,16)), strand=c('+','-','-'), seqinfo=Seqinfo("1", 25), name=c("A","B","C"))
+    gr = GRanges(1, IRanges(c(3,7,13), c(5,9,16)), strand=c('+','-','-'), seqinfo=Seqinfo("1", 25), name=c("A","B","C"))
     expect_equal(width(seqinfo2gr(gr)), 25)
     expect_equal(length(seqinfo2gr(si)), 25)
 
 })
 
 
-## dedup 
+## dedup()
 
 test_that('dedup() works', {
 
@@ -429,6 +415,8 @@ test_that('gr.refactor() works', {
 
 })
 
+
+## gr.tostring()
 
 
 test_that('gr.tostring() works', {

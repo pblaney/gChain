@@ -29,15 +29,8 @@
 ## The Broad Institute of MIT and Harvard / Cancer program.
 ## marcin@broadinstitute.org
 ########################
-## require('Matrix')
-## require('GenomicRanges')
-## library('rtracklayer')
 
-## if (!file.exists(Sys.getenv('GIT_HOME')))
-##   stop('Need to set GIT_HOME environment variable to git base directory and clone isva repos into this directory before loading')
 
-#GCHAIN.DB = paste(Sys.getenv('GIT_HOME'), 'gChain/DB/', sep = "/")
-#source(paste(Sys.getenv('GIT_HOME'), 'grUtils/grUtils.R', sep = "/"))
 
 #################################################################
 #' @name gChain-class
@@ -143,6 +136,10 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
     }
     if (any(is.na(seqlengths(y)))){
         y = gr.fix(y, drop = F)
+    }
+
+    if (!is(x, 'GRanges') | !is(y, 'GRanges')){
+        stop('Error: inputs to gChain() must be of the type GRanges')   
     }
 
     keep = which(width(x)!=0 & width(y)!=0)
@@ -1117,7 +1114,7 @@ setMethod('[', 'gChain', function(x, i){
 #' instantiate a new gChain
 #'
 #' @export
-gChain = function(x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame()) new('gChain', x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame())
+gChain = function(x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame()) new('gChain', x=x, y=y, pad.left = pad.left, pad.right = pad.right, scale = scale, val = val)
 
 ######
 # Basic gChain synthesizers
