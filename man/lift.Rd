@@ -5,7 +5,7 @@
 \alias{lift}
 \title{lift}
 \usage{
-\S4method{lift}{gChain}(.Object, x, format = "GRanges", split.grl = FALSE,
+\S4method{lift}{gChain}(.Object, x, format = "GRanges", split.grl = F,
   pintersect = NA, by = NULL, ...)
 }
 \arguments{

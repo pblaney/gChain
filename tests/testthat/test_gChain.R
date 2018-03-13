@@ -57,11 +57,21 @@ test_that('testing gChain() works', {
     expect_equal(dim(gChain(gr[1:2], gr2, val = 42))[1], 25)
     ## if (ncol(val)>0 & nrow(val)==1){
     expect_equal(dim(gChain(gr[1:2], gr2, val = data.frame(c(42))))[1], 25)
-
+    ## if (is.vector(val)){
+    expect_equal(dim(gChain(gr[1:2], gr2, val = c(42, 13)))[1], 25)
+    ## x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame())
+    ## if (is.null(scale)){
+    expect_equal(dim((gChain(gr2, scale=1)))[1], 25)   
+    ## what does scale < 0 mean?
+    expect_equal(dim((gChain(gr2, scale=-1)))[1], 25)
+    
 })
 
 
 
+
+## foo1 = gChain(grl.unlist(grl1), grl.unlist(grl2)[1:500]) 
+## foo2 = gChain(example_dnase[1:200])
 
 
 
@@ -101,6 +111,19 @@ test_that('testing lift() works', {
     expect_error(lift(foo, c(1))) ## Error in .local(.Object, x, ...) : Error: x must be Granges object
     expect_equal(length(lift(foo, grl2)), 251)
     expect_equal(length(lift(foo, IRanges(c(3,7,13), c(5,9,16)))), 0)
+    ## data.frame
+    expect_true(is(lift(foo, grl.unlist(grl2), format='df'), 'data.frame'))
+    expect_equal(dim(lift(foo, grl.unlist(grl2), format='df'))[1], 502)
+    expect_equal(dim(lift(foo, grl.unlist(grl2), format='df'))[2], 4)
+    ## GRanges
+    expect_equal(length(lift(foo, grl.unlist(grl2), format='GRanges')), 502)
+    expect_true(is(lift(foo, grl.unlist(grl2), format='GRanges'), 'GRanges'))
+    ## trackData
+    expect_equal(dim(lift(foo, grl.unlist(grl2), format='trackData'))[1], 502)
+    expect_equal(dim(lift(foo, grl.unlist(grl2), format='trackData'))[2], 4)
+    ## matrix
+    expect_equal(dim(lift(foo, grl.unlist(grl2), format='matrix'))[1], 502)
+    expect_equal(dim(lift(foo, grl.unlist(grl2), format='matrix'))[2], 4)
 
 })
 
@@ -155,6 +178,14 @@ test_that('testing expand() works', {
 
 
 
+test_that('testing values() works', {
+
+    expect_equal(values(gChain(grl.unlist(grl2))), data.frame())
+
+})
+
+
+
 
 
 test_that('testing t() works', {
@@ -203,6 +234,13 @@ test_that('testing [ works', {
 
 ## spChain 
 
+test_that('testing spChain() works', {
+
+    expect_true(is(spChain(grl2[1:3]), 'gChain'))
+    expect_equal(width(si2gr(seqinfo(spChain(grl2[1:3]))$y)[1]), 2)
+
+})
+
 
 
 
@@ -219,9 +257,10 @@ test_that('testing gSubset() works', {
 
 test_that('testing paChain() works', {
 
-    ##s1 = DNAString("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG")
-    ##s2 = DNAString("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")
-    ##pa = pairwiseAlignment(s1, s2)
+    ## library(Biostrings)
+    ## s1 = DNAString("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG")
+    ## s2 = DNAString("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")
+    ## pa = pairwiseAlignment(s1, s2)
     ### BUG
     ## Error in nchar(pa) : no method for coercing this S4 class to a vector
     expect_error(paChain('ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG', 'GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC'))
@@ -330,16 +369,13 @@ test_that('testing rearrange() works', {
 
 
 
-### bfb()
-### > bfb('chr2')
-### Cycle 1 chrom widthNA MB
-### 
-### Error: subscript contains invalid names
-### 
-
 test_that('testing bfb() works', {
 
-    expect_error(bfb('1'))
+    ## stop('w and wd must be positive')
+    expect_error(bfb(w=-.05))
+    expect_error(bfb(3), NA) ## check runs
+    ### even setting set.seed(), the dim() varies
+    expect_true(is(bfb(3), 'gChain'))
 
 })
 
@@ -366,6 +402,7 @@ test_that('testing ir2vec() works', {
     expect_equal(length(ir2vec(gr)), 10)
     expect_equal(ir2vec(gr)[1], 3)
     expect_equal(ir2vec(gr)[10], 16)
+    expect_equal(length(ir2vec(i2, each=c(2, 4, 6))), 120)
 
 })
 
@@ -377,6 +414,7 @@ test_that('testing ir2vec() works', {
 
 test_that('testing gCat() works', {
 
+    expect_true(is(gCat(), 'gChain'))
     expect_error(gCat(foo1, foo2)) ### shouldn't be an error
 
 })
@@ -436,6 +474,7 @@ test_that('seqinfo2gr() works', {
     gr = GRanges(1, IRanges(c(3,7,13), c(5,9,16)), strand=c('+','-','-'), seqinfo=Seqinfo("1", 25), name=c("A","B","C"))
     expect_equal(width(seqinfo2gr(gr)), 25)
     expect_equal(length(seqinfo2gr(si)), 25)
+    expect_equal(length(seqinfo2gr(si, strip.empty=TRUE)), 25)
 
 })
 
