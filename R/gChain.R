@@ -1385,7 +1385,7 @@ paChain = function(seq1, seq2,
             sn2 = c(sn2, sn2.tmp)
         }
 
-        opts <- list(...)
+        opts <- list() ### list(...)
         if ('numchunk' %in% names(opts)){
             numchunk <- opts$numchunk
         } else{
@@ -1393,9 +1393,9 @@ paChain = function(seq1, seq2,
         }
 
         if (mc.cores > 1){
-            pa <- mc.pairwiseAlignment(seq1, seq2, numchunk=numchunk, mc.cores=mc.cores, ...)
+            pa <- mc.pairwiseAlignment(seq1, seq2, numchunk=numchunk, mc.cores=mc.cores) ## , ...)
         } else{
-            pa <- pairwiseAlignment(seq1, seq2, ...)
+            pa <- pairwiseAlignment(seq1, seq2) ###, ...)
         }
     }
 
@@ -1467,10 +1467,10 @@ paChain = function(seq1, seq2,
 
     sinfo1 = Seqinfo(seqlengths = sl1, seqnames = names(sl1))
     sinfo2 = Seqinfo(seqlengths = sl2, seqnames = names(sl2))
-    sinfo.ali = Seqinfo(seqlengths = nchar(pa), seqnames = as.character(1:length(pa)))
+    sinfo.ali = Seqinfo(seqlengths = nchar(as.character(pa)), seqnames = as.character(1:length(pa)))
 
     ## deletions specify pattern gaps in alignment coordinates
-    del.len = elementLengths(deletion(pa))
+    del.len = elementNROWS(deletion(pa))
     del.ix = unlist(sapply(1:length(del.len), function(x) rep(x, del.len[x])))
 
     if (length(del.ix)>0){
@@ -1488,8 +1488,8 @@ paChain = function(seq1, seq2,
     ali2pat = gChain(links(tmp)$x, GRanges(sn1[keep.ix[al.ix]], ## make sure to shift to account for start gap
         ranges = GenomicRanges::shift(ranges(links(tmp)$y), start(Biostrings::pattern(pa[al.ix]))-1), strand = '+', seqlengths = seqlengths(sinfo1)))
   
-    # insertions specify subject gaps in alignment coordinates
-    ins.len = elementLengths(insertion(pa))
+    ## insertions specify subject gaps in alignment coordinates
+    ins.len = elementNROWS(insertion(pa))
     ins.ix = unlist(sapply(1:length(ins.len), function(x) rep(x, ins.len[x])))
   
     if (length(ins.ix)>0){

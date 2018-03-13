@@ -4,6 +4,7 @@ library(testthat)
 library(gUtils)
 
 
+
 Sys.setenv(DEFAULT_BSGENOME = "BSgenome.Hsapiens.UCSC.hg19::Hsapiens")
 
 
@@ -70,22 +71,19 @@ test_that('testing gChain() works', {
 
 
 
-## foo1 = gChain(grl.unlist(grl1), grl.unlist(grl2)[1:500]) 
-## foo2 = gChain(example_dnase[1:200])
 
+test_that('testing gMultiply() works', {
 
-
-test_that('testing gMultiply()) works', {
-
-    ## foo1 = gChain(grl.unlist(grl1), grl.unlist(grl2)[1:500]) 
-    ## foo2 = gChain(example_dnase[1:200])
-    ### multiplied = gMultiply(foo1, foo2)
-    ## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
-    gc1 = gChain(gr,gr)
-    gc2 = gChain(gr,gr)
+    gc1 = gChain(gr, gr)
+    gc2 = gChain(gr, gr)
     gc2 = gMultiply(gc1, gc2)
     ##expect_equal(gc1, gc2) 
     expect_equal(gMultiply(gc1, gc2), gMultiply(gc2, gc1)) 
+    ## empty GRanges()
+    foo1 = gChain(grl.unlist(grl1), grl.unlist(grl2)[1:500]) 
+    foo2 = gChain(example_dnase[1:200])
+    multiplied = gMultiply(foo1, foo2)
+    expect_equal(multiplied, GRanges())
 
 })
 
@@ -93,10 +91,7 @@ test_that('testing gMultiply()) works', {
 
 
 
-
-
-
-test_that('testing scale()) works', {
+test_that('testing scale() works', {
 
     expect_equal(scale(gChain()), 1)
 
@@ -144,7 +139,7 @@ test_that('testing scale()) works', {
 
 
 
-test_that('testing pads()) works', {
+test_that('testing pads() works', {
 
     expect_equal(pads(gChain())$pad.left, 0)
     expect_equal(pads(gChain())$pad.right, 0)
@@ -154,7 +149,7 @@ test_that('testing pads()) works', {
 
 
 
-test_that('testing genomes()) works', {
+test_that('testing genomes() works', {
 
     expect_equal(width(genomes(gChain())$x), 0)
     expect_equal(width(genomes(gChain())$y), 0)
@@ -176,22 +171,13 @@ test_that('testing "*" works', {
     ## with GRList
     ## setMethod("*", signature(e1 = "gChain", e2 = "GRangesList"), function(e1, e2)
     expect_equal(length(gc1 * grl2), 0)
+    ## with GRanges
+    expect_equal(length(gc1 * gr2), 3)
 
 })
 
 
 
-
-
-
-### gMultiply BUG
-## > foo = gChain(grl.unlist(grl2))
-## > foobar = foo = gChain(grl.unlist(grl1))
-## > foo * foobar
-## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
-## > gMultiply(foo, foobar)
-## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
-## > 
 
 
 test_that('testing expand() works', {
@@ -232,8 +218,9 @@ test_that('testing breaks() works', {
 
 })
 
-## cn
 
+
+## cn
 test_that('testing cn() works', {
 
     expect_equal(length(cn(gChain(grl.unlist(grl2)))), 1029)
@@ -246,7 +233,6 @@ test_that('testing cn() works', {
 
 
 ## setMethod('[', 'gChain', function(x, i){
-
 test_that('testing [ works', {
 
     expect_true(is(gChain()[1], 'gChain'))
@@ -257,7 +243,6 @@ test_that('testing [ works', {
 
 
 ## spChain 
-
 test_that('testing spChain() works', {
 
     expect_true(is(spChain(grl2[1:3]), 'gChain'))
@@ -281,17 +266,14 @@ test_that('testing gSubset() works', {
 
 test_that('testing paChain() works', {
 
-    ## library(Biostrings)
-    ## s1 = DNAString("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG")
-    ## s2 = DNAString("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")
-    ## pa = pairwiseAlignment(s1, s2)
-    ### BUG
-    ## Error in nchar(pa) : no method for coercing this S4 class to a vector
-    expect_error(paChain('ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG', 'GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC'))
-    expect_error(paChain(DNAString("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG"), DNAString("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")))
+    s1 = DNAString("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG")
+    s2 = DNAString("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")
+    expect_equal(dim(paChain('ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG', 'GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC'))[1], 54)
+    expect_equal(dim(paChain('ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG', 'GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC'))[2], 60)   
+    expect_equal(dim(suppressWarnings(paChain(s1, s2)))[1], 54)
+    expect_equal(dim(suppressWarnings(paChain(s1, s2)))[2], 60)
 
 })
-
 
 
 
@@ -408,8 +390,6 @@ test_that('testing bfb() works', {
 
 
 ### utility functions
-
-
 test_that('testing vec2ir() works', {
 
     expect_equal(width(vec2ir(c(1, 2, 2, 2))[1]), 2)
@@ -434,7 +414,6 @@ test_that('testing ir2vec() works', {
 ## > gCat(foo1, foo2)
 ## Error in c(x, list(...)) : 
 ##   Error: At least one of the objects to be concatanted is not a gChain
-
 
 test_that('testing gCat() works', {
 
@@ -469,7 +448,6 @@ test_that('testing squeeze() works', {
 ### grl.split BUG; 
 ## ele = tryCatch(as.data.frame(grl)$element, error = function(e) e)
 ## NULL
-
 test_that('grl.split() works', {
 
     expect_error(grl.split(grl2))
@@ -479,7 +457,6 @@ test_that('grl.split() works', {
 
 
 ## levapply()
-
 test_that('levapply() works', {
 
     gr = GRanges(1, IRanges(c(3,7,13), c(5,9,16)), strand=c('+','-','-'), seqinfo=Seqinfo("1", 25), name=c("A","B","C"))
@@ -492,7 +469,6 @@ test_that('levapply() works', {
 
 
 ## seqinfo2gr()
-
 test_that('seqinfo2gr() works', {
 
     gr = GRanges(1, IRanges(c(3,7,13), c(5,9,16)), strand=c('+','-','-'), seqinfo=Seqinfo("1", 25), name=c("A","B","C"))
@@ -504,7 +480,6 @@ test_that('seqinfo2gr() works', {
 
 
 ## dedup()
-
 test_that('dedup() works', {
 
     expect_equal(dedup(c(rep(2, 10.5), rep(3, 20)))[30], "3.20")
@@ -514,7 +489,6 @@ test_that('dedup() works', {
 
 
 ## gr.pad() 
-
 test_that('gr.pad() works', {
 
     expect_equal(width(gr.pad(gr2, 10)[1]), 16)
@@ -525,7 +499,6 @@ test_that('gr.pad() works', {
 
 
 ## gr.refactor() 
-
 test_that('gr.refactor() works', {
 
     expect_equal(as.character(seqnames(gr.refactor(gr2, sn = c('2', '2'))))[1], '2')
@@ -536,8 +509,6 @@ test_that('gr.refactor() works', {
 
 
 ## gr.tostring()
-
-
 test_that('gr.tostring() works', {
 
     expect_true(is(gr.tostring(gr2), 'character'))
