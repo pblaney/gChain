@@ -75,14 +75,19 @@ test_that('testing gChain() works', {
 
 
 
-##test_that('testing gMultiply()) works', {
+test_that('testing gMultiply()) works', {
 
     ## foo1 = gChain(grl.unlist(grl1), grl.unlist(grl2)[1:500]) 
     ## foo2 = gChain(example_dnase[1:200])
     ### multiplied = gMultiply(foo1, foo2)
     ## Error in cbind(1:length(gr), starts)[, 2] : subscript out of bounds
+    gc1 = gChain(gr,gr)
+    gc2 = gChain(gr,gr)
+    gc2 = gMultiply(gc1, gc2)
+    ##expect_equal(gc1, gc2) 
+    expect_equal(gMultiply(gc1, gc2), gMultiply(gc2, gc1)) 
 
-## })
+})
 
 
 
@@ -155,6 +160,25 @@ test_that('testing genomes()) works', {
     expect_equal(width(genomes(gChain())$y), 0)
 
 })
+
+
+
+
+test_that('testing "*" works', {
+
+    ## identity multiplication
+    ## setMethod("*", signature(e1 = "gChain", e2 = "GRanges"), function(e1, e2) 
+    gc1 = gChain(gr,gr)
+    gc2 = gChain(gr,gr)
+    ## gc2 = gc1 * gc2
+    ## expect_equal(gc1, gc2) 
+    expect_equal((gc1 * gc2), (gc2 * gc1)) 
+    ## with GRList
+    ## setMethod("*", signature(e1 = "gChain", e2 = "GRangesList"), function(e1, e2)
+    expect_equal(length(gc1 * grl2), 0)
+
+})
+
 
 
 

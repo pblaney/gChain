@@ -5,11 +5,13 @@
 \alias{lift}
 \title{lift}
 \usage{
-\S4method{lift}{gChain}(.Object, x, format = "GRanges", split.grl = F,
+\S4method{lift}{gChain}(.Object, x, format = "GRanges", split.grl = FALSE,
   pintersect = NA, by = NULL, ...)
 }
 \arguments{
 \item{x}{GRanges to lift through this chain}
+
+\item{format}{INFO INFO}
 
 \item{split.grl}{flag whether or not to split output into GRangesList for GRangesList input}
 }

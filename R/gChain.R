@@ -277,133 +277,137 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
 
     # image of e2 y intervals under e1, (e2y.image is in genome C)
     e2y.image <- lift(e1, e2@.galy, pintersect=pintersect) #, mc.cores=mc.cores) #max.chunk=1e7, mc.cores=mc.cores))
-  
-    # e2 y intervals trimmed to align with e2y.image, (e2y.preimage is in genome B)
-    e2y.preimage = gr.trim(e2@.galy[values(e2y.image)$query.id], values(e2y.image)$query.start, values(e2y.image)$query.end);
-
-    # keep track of e2 link.id (ie the query id from the first lift)
-    values(e2y.preimage)$e2.link.id = values(e2y.image)$query.id
-
-    # trimmed e2 y intervals lifted backward through e2 (e2x.preimage is in genome A)
-    e2x.preimage <- lift(t(e2), e2y.preimage, pintersect=pintersect) #, mc.cores=mc.cores)   
- 
-    # only keep mappings that have e2.link.id = link.id
-    # (avoid redundant mappings arising from back and forth lift)
-    e2x.preimage = e2x.preimage[values(e2x.preimage)$e2.link.id == values(e2x.preimage)$link.id]
-    
-    # replicate e2y image and preimage along backlifted hits
-    e2y.preimage = e2y.preimage[values(e2x.preimage)$query.id]
-    e2y.image = e2y.image[values(e2x.preimage)$query.id]
-  
-    new.scale = e1@.scale[e2y.image$link.id]*e2@.scale[e2x.preimage$link.id]
-
-    ## save link ids for downstream processing
-    e1.link.ids = values(e2y.image)$link.id
-    e2.link.ids = values(e2x.preimage)$link.id
-  
-    pad.left = 0;
-    pad.right = 0;
-  
-    if (length(new.scale)>0){    
-        if (all(abs(new.scale)>1)){
-            ## to determine padding on right and left 
-            ## need to traverse both chains forward, lifting just the starts and end points
-            ## of each e1x.preimage interval and noting how many e2y.image coordinates it maps to
-            ## if this is equal to new.scale on each side then no pad necessary,
-            ## otherwise we need padding
-
-            # keeping track of link.ids is crucial to make sure we don't do redundant traversals
-            # if chains are very tangled / promiscuous
-            values(e2x.preimage)$e1.link.id = e1.link.ids;
-            values(e2x.preimage)$e2.link.id = e2.link.ids;
-    
-            e2y.starts = lift(e2, gr.trim(e2x.preimage, 1))
-            e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e2.link.id]
-            e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
-        
-            e2y.ends = lift(e2,  gr.trim(e2x.preimage, start = width(e2x.preimage)))
-            e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e2.link.id]
-            e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
-
-            ## then e1
-            e2y.starts = lift(e1, e2y.starts)
-            e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e1.link.id]
-            e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
-        
-            e2y.ends = lift(e1,  e2y.ends)
-            e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e1.link.id]
-            e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
-        
-            pad.right = abs(new.scale)[1] - width(pintersect(e2y.ends, e2y.image))
-            pad.left = abs(new.scale)[1] - width(pintersect(e2y.starts, e2y.image))
-
-            ## flip pad right and pad left for neg sccale
-            if (any(neg.map <- new.scale<0)){
-                tmp = pad.right[neg.map]
-                pad.right[neg.map] = pad.left[neg.map]
-                pad.left[neg.map] = tmp[neg.map]
-            }
-            
-            # one codon edge case - padding is meaningless, but to preserve "scale"
-            # we want to make padding + width consistent while making pad.left 0 for new.scale<0 links
-            # and pad.right 0 for new.scale > 0 one.codon links
-            one.codon = width(e2x.preimage)==1
-            pad.left[one.codon & new.scale>0] = 0
-            pad.right[one.codon & new.scale<0] = 0
-        } else if (all(abs(new.scale)<1)) {
-            ## now do the same in reverse if the scale is changing in the other direction
-            values(e2y.image)$e1.link.id = e1.link.ids
-            values(e2y.image)$e2.link.id = e2.link.ids
-        
-            e1x.starts = lift(t(e1), gr.trim(e2y.image, 1))
-            e1x.starts = e1x.starts[values(e1x.starts)$link.id == values(e1x.starts)$e1.link.id]
-            e1x.starts = e1x.starts[order(values(e1x.starts)$query.id)]
-
-            e1x.starts = lift(t(e2), e1x.starts)
-            e1x.starts = e1x.starts[values(e1x.starts)$link.id == values(e1x.starts)$e2.link.id]
-            e1x.starts = e1x.starts[order(values(e1x.starts)$query.id)]
-        
-            e1x.ends = lift(t(e1), gr.trim(e2y.image, start = width(e2y.image)))
-            e1x.ends = e1x.ends[values(e1x.ends)$link.id == values(e1x.ends)$e1.link.id]
-            e1x.ends = e1x.ends[order(values(e1x.ends)$query.id)]
-        
-            e1x.ends = lift(t(e2), e1x.ends)
-            e1x.ends = e1x.ends[values(e1x.ends)$link.id == values(e1x.ends)$e2.link.id]
-            e1x.ends = e1x.ends[order(values(e1x.ends)$query.id)]
-        
-            pad.left = (1/abs(new.scale)[1])-width(pintersect(e1x.starts, e2x.preimage))
-            pad.right = (1/abs(new.scale)[1])-width(pintersect(e1x.ends, e2x.preimage))
-
-            ## flip pad right and pad left for neg sccale
-            if (any(neg.map <- new.scale<0)){
-                tmp = pad.right[neg.map]
-                pad.right[neg.map] = pad.left[neg.map]
-                pad.left[neg.map] = tmp[neg.map]
-            }
-        
-            ## one codon edge case - padding can be on either side, we choose right
-            one.codon = width(e2y.image)==1
-            pad.left[one.codon & new.scale>0] = 0
-            pad.right[one.codon & new.scale<0] = 0
-        }
-    }
-  
-    val.e1 = values(e1)[e2y.image$link.id, ,drop = FALSE]
-    val.e2 = values(e2)[e2x.preimage$link.id, ,drop = FALSE]
-
-    if (ncol(val.e1)>0 & ncol(val.e2)>0 && FALSE) {
-        val = cbind(val.e1[, setdiff(names(val.e1), names(val.e2)), drop = FALSE], val.e2[, setdiff(names(val.e2), names(val.e1)), drop = FALSE])
-        shared.names = intersect(names(val.e2), names(val.e1))
-        if (length(shared.names)>0){
-            val[, shared.names] = val.e2[,shared.names] | val.e1[,shared.names]
-        }
-    } else if (ncol(val.e1)>0){
-        val = val.e1
+    if (length(e2y.image)==0){
+        return(GRanges())
     } else{
-        val = val.e2
-    }
+        # e2 y intervals trimmed to align with e2y.image, (e2y.preimage is in genome B)
+        e2y.preimage = gr.trim(e2@.galy[values(e2y.image)$query.id], values(e2y.image)$query.start, values(e2y.image)$query.end);
 
-    return(gChain(e2x.preimage, e2y.image, pad.left = pad.left, pad.right = pad.right, val= val))
+        # keep track of e2 link.id (ie the query id from the first lift)
+        values(e2y.preimage)$e2.link.id = values(e2y.image)$query.id
+
+        # trimmed e2 y intervals lifted backward through e2 (e2x.preimage is in genome A)
+        e2x.preimage <- lift(t(e2), e2y.preimage, pintersect=pintersect) #, mc.cores=mc.cores)   
+ 
+        # only keep mappings that have e2.link.id = link.id
+        # (avoid redundant mappings arising from back and forth lift)
+        e2x.preimage = e2x.preimage[values(e2x.preimage)$e2.link.id == values(e2x.preimage)$link.id]
+    
+        # replicate e2y image and preimage along backlifted hits
+        e2y.preimage = e2y.preimage[values(e2x.preimage)$query.id]
+        e2y.image = e2y.image[values(e2x.preimage)$query.id]
+  
+        new.scale = e1@.scale[e2y.image$link.id]*e2@.scale[e2x.preimage$link.id]
+
+        ## save link ids for downstream processing
+        e1.link.ids = values(e2y.image)$link.id
+        e2.link.ids = values(e2x.preimage)$link.id
+  
+        pad.left = 0;
+        pad.right = 0;
+  
+        if (length(new.scale)>0){    
+            if (all(abs(new.scale)>1)){
+                ## to determine padding on right and left 
+                ## need to traverse both chains forward, lifting just the starts and end points
+                ## of each e1x.preimage interval and noting how many e2y.image coordinates it maps to
+                ## if this is equal to new.scale on each side then no pad necessary,
+                ## otherwise we need padding
+
+                # keeping track of link.ids is crucial to make sure we don't do redundant traversals
+                # if chains are very tangled / promiscuous
+                values(e2x.preimage)$e1.link.id = e1.link.ids;
+                values(e2x.preimage)$e2.link.id = e2.link.ids;
+        
+                e2y.starts = lift(e2, gr.trim(e2x.preimage, 1))
+                e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e2.link.id]
+                e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
+            
+                e2y.ends = lift(e2,  gr.trim(e2x.preimage, start = width(e2x.preimage)))
+                e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e2.link.id]
+                e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
+
+                ## then e1
+                e2y.starts = lift(e1, e2y.starts)
+                e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e1.link.id]
+                e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
+        
+                e2y.ends = lift(e1,  e2y.ends)
+                e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e1.link.id]
+                e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
+        
+                pad.right = abs(new.scale)[1] - width(pintersect(e2y.ends, e2y.image))
+                pad.left = abs(new.scale)[1] - width(pintersect(e2y.starts, e2y.image))
+
+                ## flip pad right and pad left for neg sccale
+                if (any(neg.map <- new.scale<0)){
+                    tmp = pad.right[neg.map]
+                    pad.right[neg.map] = pad.left[neg.map]
+                    pad.left[neg.map] = tmp[neg.map]
+                }
+            
+                # one codon edge case - padding is meaningless, but to preserve "scale"
+                # we want to make padding + width consistent while making pad.left 0 for new.scale<0 links
+                # and pad.right 0 for new.scale > 0 one.codon links
+                one.codon = width(e2x.preimage)==1
+                pad.left[one.codon & new.scale>0] = 0
+                pad.right[one.codon & new.scale<0] = 0
+            } else if (all(abs(new.scale)<1)) {
+                ## now do the same in reverse if the scale is changing in the other direction
+                values(e2y.image)$e1.link.id = e1.link.ids
+                values(e2y.image)$e2.link.id = e2.link.ids
+        
+                e1x.starts = lift(t(e1), gr.trim(e2y.image, 1))
+                e1x.starts = e1x.starts[values(e1x.starts)$link.id == values(e1x.starts)$e1.link.id]
+                e1x.starts = e1x.starts[order(values(e1x.starts)$query.id)]
+    
+                e1x.starts = lift(t(e2), e1x.starts)
+                e1x.starts = e1x.starts[values(e1x.starts)$link.id == values(e1x.starts)$e2.link.id]
+                e1x.starts = e1x.starts[order(values(e1x.starts)$query.id)]
+        
+                e1x.ends = lift(t(e1), gr.trim(e2y.image, start = width(e2y.image)))
+                e1x.ends = e1x.ends[values(e1x.ends)$link.id == values(e1x.ends)$e1.link.id]
+                e1x.ends = e1x.ends[order(values(e1x.ends)$query.id)]
+        
+                e1x.ends = lift(t(e2), e1x.ends)
+                e1x.ends = e1x.ends[values(e1x.ends)$link.id == values(e1x.ends)$e2.link.id]
+                e1x.ends = e1x.ends[order(values(e1x.ends)$query.id)]
+            
+                pad.left = (1/abs(new.scale)[1])-width(pintersect(e1x.starts, e2x.preimage))
+                pad.right = (1/abs(new.scale)[1])-width(pintersect(e1x.ends, e2x.preimage))
+
+                ## flip pad right and pad left for neg sccale
+                if (any(neg.map <- new.scale<0)){    
+                    tmp = pad.right[neg.map]
+                    pad.right[neg.map] = pad.left[neg.map]
+                    pad.left[neg.map] = tmp[neg.map]
+                }
+        
+                ## one codon edge case - padding can be on either side, we choose right
+                one.codon = width(e2y.image)==1
+                pad.left[one.codon & new.scale>0] = 0
+                pad.right[one.codon & new.scale<0] = 0
+            }
+        }
+  
+        val.e1 = values(e1)[e2y.image$link.id, ,drop = FALSE]
+        val.e2 = values(e2)[e2x.preimage$link.id, ,drop = FALSE]
+
+        if (ncol(val.e1)>0 & ncol(val.e2)>0 && FALSE) {
+            val = cbind(val.e1[, setdiff(names(val.e1), names(val.e2)), drop = FALSE], val.e2[, setdiff(names(val.e2), names(val.e1)), drop = FALSE])
+            shared.names = intersect(names(val.e2), names(val.e1))
+            if (length(shared.names)>0){
+                val[, shared.names] = val.e2[,shared.names] | val.e1[,shared.names]
+            }
+        } else if (ncol(val.e1)>0){
+            val = val.e1
+        } else{
+            val = val.e2
+        }
+
+        return(gChain(e2x.preimage, e2y.image, pad.left = pad.left, pad.right = pad.right, val= val))
+    
+    }
 
 })
 
