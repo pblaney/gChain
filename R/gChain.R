@@ -1756,9 +1756,9 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
 #' @title maChain
 #' @description
 #'
-#' multiple sequence alignment chain
+#' Multiple sequence alignment chain
 #'
-#' Takes input GRanges List of interval coordinates corresponding to sequences
+#' Takes input GRangesList of interval coordinates corresponding to sequences
 #' contributing to alignments in pali. 'pali' is a list of alignment matrices
 #' (containing letters from the original sequences and '-', '.' for gaps)
 #'
@@ -1768,7 +1768,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
 #'
 #' trim will remove all alignment columns that have only gaps
 #'
-#' alternatively .. grl can be an XStringSet object with a "names" attribute containing
+#' alternatively, grl can be an XStringSet object with a "names" attribute containing
 #' Biostrings (eg AA or DNA) and gap ("-") characters.  Can also be a list of XStringSet objects.
 #'
 #' if grl is NULL, then it is assumed that the first (last) non gapped character in each MSA alignment entry
@@ -1780,6 +1780,13 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
   )
 {
     ## will only make chain for a single alignment
+    ##     > bstringfoo
+    ##   A BStringSet instance of length 3
+    ##    width seq
+    ## [1]    14 #CTC-NACCAGTAT
+    ## [2]     5 #TTGA
+    ## [3]     9 TACCTAGAG
+    ## 
     if (inherits(pali, 'XStringSet')){
         pali = list(pali)
     } 
@@ -1796,6 +1803,8 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
     }
     ## assume that pali rows represent the entire sequence
     if (is.null(grl)){
+        ## Error in validObject(.Object) : 
+        ##   invalid class “GRanges” object: 'mcols(x)' is not parallel to 'x'
         grl = do.call('GRangesList', lapply(pali, function(this.pali) GRanges(rownames(this.pali), IRanges(start = 1, rowSums(this.pali != '-')))))
         names(grl) = names(pali)
     }
@@ -1868,12 +1877,12 @@ txChain = function(grl, txname = NULL, translate = FALSE, exonFrame.field = 'exo
     }
     
     if (!is.null(val)){
-        if (nrow(val) != length(grl)){
-            stop('val data frame must correspond to grl, i.e. have nrows = length(grl)')
-        }
-
         if (!is.data.frame(val)){
             val = as.data.frame(val)
+        }
+
+        if (is.null(nrow(val)) | (nrow(val) != length(grl))){
+            stop('Error: val data.frame must correspond to grl, i.e. have nrows = length(grl)')
         }
     }
 
@@ -2014,7 +2023,7 @@ copy = function(from, ## granges of source intervals
 
     if (any(strand(from) == '*')){
         warning('converting some * strands in "from" to +')
-        strand(from)[which(strand(from)=='*')] = '+';
+        strand(from)[which(as.logical(strand(from)=='*'))] = '+';
     }
 
     if (is.character(to)){

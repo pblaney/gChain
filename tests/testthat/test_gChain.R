@@ -275,9 +275,20 @@ test_that('testing paChain() works', {
 
 })
 
-
-
-
+## 
+## library(gChain)
+## library(testthat)
+## library(gUtils)
+## library(Biostrings)
+## bstringfoo = BStringSet(c("#CTC-NACCAGTAT", "#TTGA", "TACCTAGAG"))
+## 
+## 
+## grl = NULL
+## pali = BStringSet(c("#CTC-NACCAGTAT", "#TTGA", "TACCTAGAG"))
+## pad = 0
+## trim = TRUE
+## trim.thresh = 0 
+## 
 
 ## cgChain()
 
@@ -294,13 +305,34 @@ test_that('testing duplicate() works', {
 
 
 
+## maChain()
+
 
 ## txChain
 
 test_that('testing duplicate() works', {
-
-    expect_true(is(txChain(example_dnase), 'gChain'))
     
+    ## GRangesList input
+    expect_equal(dim(txChain(grl2))[1], 3095693983)
+    expect_equal(dim(txChain(grl2))[2], 502)
+    ## GRanges input
+    expect_true(is(txChain(example_dnase), 'gChain')) 
+    ## val
+    labels = c(rep('hey', 10000))
+    expect_equal(dim(txChain(example_dnase, val=labels))[1], 3095693983)
+    expect_equal(dim(txChain(example_dnase, val=labels))[2], 6070884)
+    ##  Error: val data.frame must correspond to grl, i.e. have nrows = length(grl)
+    expect_error(txChain(example_dnase, val = c("foo", "bar")))
+    ## txchain
+    txchain_labels = c(rep('foo', 251))
+    expect_equal(dim(txChain(example_dnase, txchain_labels))[1], 3095693983)
+    expect_equal(dim(txChain(example_dnase, txchain_labels))[2], 6070884)
+    ## exonFrame.field 
+    expect_true(is(txChain(grl2, exonFrame.field = 'bin'), 'gChain')) 
+    expect_equal(dim(txChain(grl2, exonFrame.field = 'bin'))[1], 3095693983)
+    expect_equal(dim(txChain(grl2, exonFrame.field = 'bin'))[2], 761)  
+
+
 })
 
 
