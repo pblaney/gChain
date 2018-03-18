@@ -16,9 +16,6 @@
 \item{split.grl}{flag whether or not to split output into GRangesList for GRangesList input}
 }
 \description{
-gChain lift
-gchain::lift
-
 Takes GRanges input and returns GRanges output
 Output GRanges values() fields are tagged with the following values to allow mapping to input
 (1) query.id - index of query matching this GRanges
@@ -26,16 +23,16 @@ Output GRanges values() fields are tagged with the following values to allow map
 (3) query.end - end of this GRanges in the query.id query
 (4) link.id - index of link in gChain used to make this mapping
 
-output GRanges will retain all other values features of the query gRanges that yielded it.
+Output GRanges will retain all other values features of the query gRanges that yielded it.
 
-GRangesList can be also provided as x, in which case the output will be a GRL or list of data frames
+GRangesList can be also provided as input x, in which case the output will be a GRL or list of data frames
 one for each input
 
 If x is a trackData object, then output will be a trackData object.  trackData inputs should be of length 1.
 
-if split.grl = T, grl outputs are split via grl.split according to (mapped) seqname and strand
+if split.grl = TRUE, grl outputs are split via grl.split according to (mapped) seqname and strand
 
-remaining args passed on to gr.findoverlaps
+Remaining args passed on to gr.findoverlaps
 }
 \author{
 Marcin Imielinski

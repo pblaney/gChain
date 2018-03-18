@@ -4,7 +4,6 @@ library(testthat)
 library(gUtils)
 
 
-
 Sys.setenv(DEFAULT_BSGENOME = "BSgenome.Hsapiens.UCSC.hg19::Hsapiens")
 
 
@@ -77,7 +76,7 @@ test_that('testing gMultiply() works', {
     gc1 = gChain(gr, gr)
     gc2 = gChain(gr, gr)
     gc2 = gMultiply(gc1, gc2)
-    ##expect_equal(gc1, gc2) 
+    ## expect_equal(gc1, gc2) 
     expect_equal(gMultiply(gc1, gc2), gMultiply(gc2, gc1)) 
     ## empty GRanges()
     foo1 = gChain(grl.unlist(grl1), grl.unlist(grl2)[1:500]) 
@@ -262,6 +261,7 @@ test_that('testing gSubset() works', {
 })
 
 
+
 ## paChain()
 
 test_that('testing paChain() works', {
@@ -272,8 +272,59 @@ test_that('testing paChain() works', {
     expect_equal(dim(paChain('ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG', 'GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC'))[2], 60)   
     expect_equal(dim(suppressWarnings(paChain(s1, s2)))[1], 54)
     expect_equal(dim(suppressWarnings(paChain(s1, s2)))[2], 60)
+    ## if (inherits(seq1, 'factor')){
+    factor1 = factor("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG")
+    factor2 = factor("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")
+    expect_equal(dim(suppressWarnings(paChain(factor1, factor2)))[1], 54)
+    expect_equal(dim(suppressWarnings(paChain(factor1, factor2)))[2], 60)
+    ## score.thresh
+    expect_equal(dim(suppressWarnings(paChain(factor1, factor2, score.thresh = 5000)))[1], 54)
+    expect_equal(dim(suppressWarnings(paChain(factor1, factor2, score.thresh = 5000)))[2], 60)   
+    # reference sequence
+    # standardseq = AAString("MARKSLEMSIR")
+    # query sequences
+    # seq1 = AAString("MARKSLEMSER")
+    # seq2 = AAString("MDRKSLEMSER")
+    # seq3 = AAString("MDRKSAEMSER")
+    # seq4 = AAString("MARKSLEMSIR")
+    proteinseq1 = AAString("MDRKSAEMSER")
+    proteinseq2 = AAString("MDRKSLEMSER")
+    expect_equal(dim(suppressWarnings(paChain(proteinseq1, proteinseq2)))[1], 11)
+    expect_equal(dim(suppressWarnings(paChain(proteinseq1, proteinseq2)))[2], 11)
+    ## assume.dna=FALSE
+    expect_equal(dim(paChain('MDRKSAEMSER', 'MDRKSLEMSER', assume.dna=FALSE))[1], 11)
+    expect_equal(dim(paChain('MDRKSAEMSER', 'MDRKSLEMSER', assume.dna=FALSE))[2], 11)
+    ## Error in .Call2("new_XString_from_CHARACTER", classname, x, start(solved_SEW),  : 
+    ##   key 69 (char 'E') not in lookup table
+    expect_error(dim(paChain('MDRKSAEMSER', 'MDRKSLEMSER')))    
+    expect_error(paChain(AAString("MDRKSAEMSER"), 'ACCCT'))
+    ## 
+    fact1 = "ACTTCACCAGCTCCCTGGCGGT"
+    fact2 = "GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC"
+    expect_equal(dim(suppressWarnings(paChain(fact1, fact2)))[1], 22)
+    expect_equal(dim(suppressWarnings(paChain(fact1, fact2)))[2], 60)
+    fa1 = "A"
+    fa2 = "GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC"
+    expect_equal(dim(suppressWarnings(paChain(fa1, fa2)))[1], 1)
+    expect_equal(dim(suppressWarnings(paChain(fa1, fa2)))[2], 60)
+    f1 = "ACTTCACCAGCTCCCTGGCGGT"
+    f2 = "C"
+    expect_equal(dim(suppressWarnings(paChain(f1, f2)))[1], 22)
+    expect_equal(dim(suppressWarnings(paChain(f1, f2)))[2], 1)
+    ##  *** caught segfault ***
+    ## address 0x7f7fc7800000, cause 'memory not mapped'
+    ## pairwiseAlignment(seq1, seq2)
+    ff1 = "ACTTCACCAGCTCCCTGGCGGT"
+    ff2 = ""
+    ##     Error in paChain(ff1, ff2) : 
+    ##   Either seq1 and/or seq2 is of width 0. This will result in an error with pairwiseAlignment(seq1, seq2).
+    expect_error(paChain(ff1, ff2))
 
 })
+
+
+
+
 
 ## 
 ## library(gChain)
@@ -294,12 +345,14 @@ test_that('testing paChain() works', {
 
 test_that('testing duplicate() works', {
 
-    ## BUG
-    ## Error in .(chr.A = seqnames, start.A = start, end.A = end, width, chr.B = group_name,  : 
-    ##   could not find function "."
-    cigarfoo = cgChain('18M2D19M')
-    expect_true(is(cigarfoo, 'gChain'))
-    expect_equal(length(cigarfoo), 1)
+    ## default 
+    gChain_duplicate = duplicate(gr2)
+    expect_equal(dim(gChain_duplicate)[1], 25)
+    expect_equal(dim(gChain_duplicate)[2], 37)
+    foo = GRanges(1, IRanges(c(1, 8), c(10, 14)), strand=c('+','+'))
+    ## Error in duplicate(foo) : Error: Input ranges must be nonoverlapping
+    expect_error(duplicate(foo))
+    expect_error(duplicate(example_genes))    
     
 })
 
@@ -331,7 +384,9 @@ test_that('testing duplicate() works', {
     expect_true(is(txChain(grl2, exonFrame.field = 'bin'), 'gChain')) 
     expect_equal(dim(txChain(grl2, exonFrame.field = 'bin'))[1], 3095693983)
     expect_equal(dim(txChain(grl2, exonFrame.field = 'bin'))[2], 761)  
-
+    ## translate
+    expect_equal(dim(txChain(example_dnase, translate=TRUE))[1], 3095693983)
+    expect_equal(dim(txChain(example_dnase, translate=TRUE))[2], 2023628)
 
 })
 
@@ -356,6 +411,11 @@ test_that('testing copy() works', {
 
     expect_true(is(copy(grl.unlist(grl2)), 'gChain'))
     expect_equal(length(copy(grl.unlist(grl2))), 1)
+    ## if (any(strand(from) == '*')){
+    foo = example_dnase
+    strand(foo) = '*'
+    expect_true(is(copy(foo), 'gChain'))
+
     
 })
 
@@ -473,6 +533,9 @@ test_that('testing squeeze() works', {
     expect_equal(width(squeeze(ir1))[1], 3)
     expect_equal(width(squeeze(ir1))[3], 4)
     expect_equal(squeeze(IRanges()), IRanges())
+    irlength1 = IRanges(c(1300), c(1600))
+    expect_equal(as.data.frame(squeeze(irlength1))$width, 301)
+
 
 
 })
@@ -536,6 +599,10 @@ test_that('gr.refactor() works', {
     expect_equal(as.character(seqnames(gr.refactor(gr2, sn = c('2', '2'))))[1], '2')
     expect_equal(as.character(seqnames(gr.refactor(gr2, sn = c('chr2', '2'))))[1], 'chr2')
     expect_equal(as.character(seqnames(gr.refactor(gr2, sn = c('chr2', 'foo'))))[2], 'foo')
+    ## if (is.factor(sn)){
+    expect_equal(as.character(seqnames(gr.refactor(gr2, sn = factor(c('2', '2')))))[1], '2')        
+    expect_equal(as.character(seqnames(gr.refactor(gr2, sn = factor(c('chr2', '2')))))[1], 'chr2')
+    expect_equal(as.character(seqnames(gr.refactor(gr2, sn = factor(c('chr2', 'foo')))))[2], 'foo')
 
 })
 
@@ -546,5 +613,6 @@ test_that('gr.tostring() works', {
     expect_true(is(gr.tostring(gr2), 'character'))
 
 })
+
 
 

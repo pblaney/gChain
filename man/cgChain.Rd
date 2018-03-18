@@ -7,9 +7,9 @@
 cgChain(cigar, sn = NULL, verbose = TRUE)
 }
 \description{
-cgChain (i.e. "CIGAR ")
+cgChain (i.e. "CIGAR")
 
-processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
+Processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
 representing edit operations from subject to pattern.
 ie an insertion corresponds a gap in the subject and deletion corresponds to a gap in the pattern
 returns a chain that maps subject to pattern (e.g. genome space to read space)

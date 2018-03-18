@@ -36,9 +36,8 @@
 #' @name gChain-class
 #' @title gChain-class
 #' @description
-#' gChain
 #'
-#' specified by pair of GRanges objects .galx and .galy, each defined on a genome (ie a Seqinfo object
+#' specified by pair of GRanges objects .galx and .galy, each defined on a genome (i.e. a Seqinfo object
 #' specifying seqlevels and seqlengths, contained inside a GRanges object).  These objects are the
 #' same length and each pair of ranges .galx[i], .galy[i] specifies a region of synteny on each "genome".
 #'
@@ -70,10 +69,10 @@
 #' 
 #' These interval pairs won't have widths that are integer multiples, however (for scales>1) the  (width(y)+pad.left+pad.right)/width(x) 
 #' will be an integer, or (for scales<1)  (width(x)+pad.left+pad.right)/width(y) will be an integer.
+#' 
 #' @import gUtils GenomicRanges Matrix
 #################################################################
 setClass('gChain', representation(.galx = 'GRanges', .galy = 'GRanges', .scale = 'numeric', .pad.left = 'integer', .pad.right = 'integer', values = 'data.frame', .n = 'numeric', .m = 'numeric'))
-
 
 suppressWarnings(removeMethod('show', 'gChain')) 
 
@@ -451,8 +450,6 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' @name lift
 #' @title lift
 #' @description
-#' gChain lift
-#' gchain::lift
 #'
 #' Takes GRanges input and returns GRanges output
 #' Output GRanges values() fields are tagged with the following values to allow mapping to input
@@ -461,16 +458,17 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' (3) query.end - end of this GRanges in the query.id query
 #' (4) link.id - index of link in gChain used to make this mapping
 #'
-#' output GRanges will retain all other values features of the query gRanges that yielded it.
+#' Output GRanges will retain all other values features of the query gRanges that yielded it.
 #'
-#' GRangesList can be also provided as x, in which case the output will be a GRL or list of data frames
+#' GRangesList can be also provided as input x, in which case the output will be a GRL or list of data frames
 #' one for each input
 #'
 #' If x is a trackData object, then output will be a trackData object.  trackData inputs should be of length 1.
 #'
-#' if split.grl = T, grl outputs are split via grl.split according to (mapped) seqname and strand
+#' if split.grl = TRUE, grl outputs are split via grl.split according to (mapped) seqname and strand
 #'
-#' remaining args passed on to gr.findoverlaps
+#' Remaining args passed on to gr.findoverlaps
+#'
 #' @param x GRanges to lift through this chain
 #' @param split.grl flag whether or not to split output into GRangesList for GRangesList input
 #' @param format INFO INFO
@@ -478,7 +476,7 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' @export
 setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = FALSE, pintersect = NA, by = NULL,  ...){
 
-            verbose=FALSE
+            verbose = FALSE
 
             if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData', 'data.frame'))){
                 stop('Output format can only be "GRanges", "GRangesList", "data.frame", df", "df.all",  or "matrix"')
@@ -540,9 +538,6 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 x = GRanges('NA', x)
             }
 
-            #if (!.identical.seqinfo(seqinfo(x), seqinfo(.Object)[[1]]))
-            #  warning('Seqinfo of chain and query are not the same');
-            
             if (!inherits(x, 'GRanges')){
                 stop('Error: x must be Granges object')              
             }
@@ -560,7 +555,6 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 if (is.null(by)){
                     system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose,  ...))
                 } else{
-
                     tmpx = .Object@.galx
                     values(tmpx) = values(.Object)
                     system.time(hits <- gr.findoverlaps(x, tmpx, verbose = verbose, by = by,   ...))
@@ -1313,6 +1307,10 @@ paChain = function(seq1, seq2,
             }
         }      
     }
+
+    if ((width(seq1)==0) | (width(seq2)==0)){
+        stop("Either seq1 and/or seq2 is of width 0. This will result in an error with pairwiseAlignment(seq1, seq2).")
+    }
   
     ## check to make sure that each sequence name maps to exactly one sequence in both seq1 and seq2    
     if (any(duplicated(sn1)) && FALSE){
@@ -1325,9 +1323,7 @@ paChain = function(seq1, seq2,
         useq2 = unique(as.character(seq2))
         seq2.ix = match(as.character(seq2), useq2)      
         uname2 = unique(sn2)
-        ##namecheck = sapply(uname2, function(x) length(unique(seq2.ix[sn2==x])))>1
-        ##if (any(namecheck))
-        ##  stop(sprintf('Every seq2 sequence name should only be assigned to one seq2 sequence.  Please check the sequence-name mapping for the following sequences in seq2: %s', uname2[namecheck]))
+
     }
   
     if (!is.null(gr1)){
@@ -1395,7 +1391,7 @@ paChain = function(seq1, seq2,
         if (mc.cores > 1){
             pa <- mc.pairwiseAlignment(seq1, seq2, numchunk=numchunk, mc.cores=mc.cores) ## , ...)
         } else{
-            pa <- pairwiseAlignment(seq1, seq2) ###, ...)
+            pa <- pairwiseAlignment(seq1, seq2) 
         }
     }
 
@@ -1412,7 +1408,7 @@ paChain = function(seq1, seq2,
     uix.1 = match(uname1, sn1)
     uix.2 = match(uname2, sn2);
   
-    ## now build two gChains mapping the two sequence spaces to the "alignment space"
+    ## Now build two gChains mapping the two sequence spaces to the "alignment space"
     ## where each alignment yields its own chromosome
     ## define alignment, subject, and pattern "genomes"
 
@@ -1568,9 +1564,9 @@ paChain = function(seq1, seq2,
 #' @name cgChain
 #' @title cgChain
 #' @description
-#' cgChain (i.e. "CIGAR ")
+#' cgChain (i.e. "CIGAR")
 #'
-#' processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
+#' Processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
 #' representing edit operations from subject to pattern.
 #' ie an insertion corresponds a gap in the subject and deletion corresponds to a gap in the pattern
 #' returns a chain that maps subject to pattern (e.g. genome space to read space)
