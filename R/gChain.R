@@ -1600,7 +1600,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
         if (!is.null(sn)){
             cig.names = cbind(1:length(cigar), sn)[,2]
         } else{
-            cig.names = paste(values(cigar)$qname, ifelse(bamflag(values(cigar)$flag)[, 'isFirstMateRead'], 1, 2))
+            cig.names = paste(values(cigar)$qname, ifelse(bamUtils::bamflag(values(cigar)$flag)[, 'isFirstMateRead'], 1, 2))
         } 
         
         cigar = structure(values(cigar)$cigar, names = cig.names)
@@ -1615,8 +1615,8 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
         if (!is.null(sn)){
             cig.names = cbind(1:length(cigar), sn)[,2]
         } else{
-            cig.names = paste(values(cigar)$qname, ifelse(bamflag(values(cigar)$flag)[, 'isFirstMateRead'],'1',
-                ifelse(bamflag(values(cigar)$flag)[, 'isSecondMateRead'], '2', '')), sep = '')
+            cig.names = paste(values(cigar)$qname, ifelse(bamUtils::bamflag(values(cigar)$flag)[, 'isFirstMateRead'],'1',
+                ifelse(bamUtils::bamflag(values(cigar)$flag)[, 'isSecondMateRead'], '2', '')), sep = '')
         }
         
         cigar = structure(cigar$cigar, names = cig.names)
@@ -1780,14 +1780,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
   )
 {
     ## will only make chain for a single alignment
-    ##     > bstringfoo
-    ##   A BStringSet instance of length 3
-    ##    width seq
-    ## [1]    14 #CTC-NACCAGTAT
-    ## [2]     5 #TTGA
-    ## [3]     9 TACCTAGAG
-    ## 
-    if (inherits(pali, 'XStringSet')){
+    if (inherits(pali, 'XStringSet') | inherits(pali, 'XString')){
         pali = list(pali)
     } 
 
@@ -1795,7 +1788,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
         names(pali) = 1:length(pali)
     }
     ## will
-    if (inherits(pali[[1]], 'XStringSet')){
+    if (inherits(pali[[1]], 'XStringSet') | inherits(pali[[1]], 'XString') ){
         npali = names(pali)
         
         pali = lapply(pali, function(this.pali) t(matrix(unlist(strsplit(as.character(this.pali), '')), ncol = length(this.pali), dimnames = list(NULL, names(this.pali)))))
@@ -1805,7 +1798,8 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
     if (is.null(grl)){
         ## Error in validObject(.Object) : 
         ##   invalid class “GRanges” object: 'mcols(x)' is not parallel to 'x'
-        grl = do.call('GRangesList', lapply(pali, function(this.pali) GRanges(rownames(this.pali), IRanges(start = 1, rowSums(this.pali != '-')))))
+
+        grl = do.call('GRangesList', lapply(pali, function(this.pali) GRanges(rownames(as.data.frame(this.pali)), IRanges(start = 1, rowSums(as.data.frame(this.pali) != '-')))))
         names(grl) = names(pali)
     }
            
@@ -1821,7 +1815,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
     if (is.null(names(grl))){
         names(grl) = names(pali)
     }
-    ## names(grl) = 1:length(grl)
+    
     
     if (!identical(names(grl), names(pali))){
         stop('Names of grl and pali should be identical')
@@ -3069,4 +3063,6 @@ gr.tostring = function(gr, places = 2, interval = 1e6, unit = 'MB', prefix = 'ch
     p2 = round(end(gr)/interval, places);
     return(paste(prefix, as.character(seqnames(gr)), ':', p1, '-', p2, ' ', unit, sep = ''));
 }
+
+
 

@@ -17,6 +17,7 @@ Depends:
     Biostrings      
 Imports:
     gUtils,
+    bamUtils,
     GenomicAlignments
 Suggests:
     BSgenome.Hsapiens.UCSC.hg19,

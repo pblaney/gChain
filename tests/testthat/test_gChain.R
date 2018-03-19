@@ -363,26 +363,33 @@ test_that('testing paChain() works', {
 
 
 
-
-
 ## cgChain()
 
-test_that('testing duplicate() works', {
+test_that('testing cgChain() works', {
 
-    ## default 
-    gChain_duplicate = duplicate(gr2)
-    expect_equal(dim(gChain_duplicate)[1], 25)
-    expect_equal(dim(gChain_duplicate)[2], 37)
-    foo = GRanges(1, IRanges(c(1, 8), c(10, 14)), strand=c('+','+'))
-    ## Error in duplicate(foo) : Error: Input ranges must be nonoverlapping
-    expect_error(duplicate(foo))
-    expect_error(duplicate(example_genes))    
-    
+    expect_equal(dim(cgChain('3M1I3M1D5M'))[1], 12)
+    expect_equal(dim(cgChain('3M1I3M1D5M'))[2], 12)
+    ## GRanges
+    gr2$cigar = c('3M', '8M2I27M')
+    ## Error in aggregate.data.frame(as.data.frame(x), ...) : 
+
 })
 
 
 
+
 ## maChain()
+
+
+## test_that('testing maChain() works', {
+##
+##    proteinseq1 = AAString("MDRKSAEMSER")
+##    proteinseq2 = AAString("MDRKSLEMSER")
+##
+##
+## })
+
+
 
 
 ## txChain
@@ -421,10 +428,17 @@ test_that('testing txChain() works', {
 
 test_that('testing duplicate() works', {
 
-    expect_true(is(duplicate(grl.unlist(grl2)), 'gChain'))
+    ## default 
+    gChain_duplicate = duplicate(gr2)
+    expect_equal(dim(gChain_duplicate)[1], 25)
+    expect_equal(dim(gChain_duplicate)[2], 37)
+    foo = GRanges(1, IRanges(c(1, 8), c(10, 14)), strand=c('+','+'))
+    ## Error in duplicate(foo) : Error: Input ranges must be nonoverlapping
+    expect_error(duplicate(foo))
+    expect_error(duplicate(example_genes))  
+    expect_true(is(duplicate(grl.unlist(grl2)), 'gChain'))  
     
 })
-
 
 
 
