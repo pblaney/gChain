@@ -2,6 +2,7 @@
 library(gChain)
 library(testthat)
 library(gUtils)
+library(gTrack)
 
 
 Sys.setenv(DEFAULT_BSGENOME = "BSgenome.Hsapiens.UCSC.hg19::Hsapiens")
@@ -106,7 +107,7 @@ test_that('testing lift() works', {
     foo = gChain(grl.unlist(grl2))
     expect_equal(length(lift(foo, grl.unlist(grl2))), 502)
     expect_equal(length(lift(foo, grl.unlist(grl2), split.grl = TRUE)), 502)
-    ## if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData'))){
+    ## if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'gTrack'))){
     expect_error(length(lift(foo, grl.unlist(grl2), format='foobar')))
     expect_error(lift(foo, c(1))) ## Error in .local(.Object, x, ...) : Error: x must be Granges object
     expect_equal(length(lift(foo, grl2)), 251)
@@ -118,12 +119,14 @@ test_that('testing lift() works', {
     ## GRanges
     expect_equal(length(lift(foo, grl.unlist(grl2), format='GRanges')), 502)
     expect_true(is(lift(foo, grl.unlist(grl2), format='GRanges'), 'GRanges'))
-    ## trackData
-    expect_equal(dim(lift(foo, grl.unlist(grl2), format='trackData'))[1], 502)
-    expect_equal(dim(lift(foo, grl.unlist(grl2), format='trackData'))[2], 4)
+    ## gTrack
+    expect_equal(dim(lift(foo, grl.unlist(grl2), format='gTrack'))[1], 502)
+    expect_equal(dim(lift(foo, grl.unlist(grl2), format='gTrack'))[2], 4)
     ## matrix
     expect_equal(dim(lift(foo, grl.unlist(grl2), format='matrix'))[1], 502)
     expect_equal(dim(lift(foo, grl.unlist(grl2), format='matrix'))[2], 4)
+    ## 
+    expect_true(is(lift(gChain(example_genes), gTrack(example_genes), format='gTrack'), 'gTrack'))
 
 })
 
@@ -532,16 +535,7 @@ test_that('testing permute() works', {
 })
 
 
-## BUG
-## > rearrange(event = gr2)
-## Error in `[<-`(`*tmp*`, ix.n, value = tmp[ix.n]) : 
-##   subscript out of bounds
-
-### BUG 
-### > rearrange(grl.unlist(grl1))
-### + )
-### Error in which(seqnames(tile[ref.pairs[, 1]]) == seqnames(tile[ref.pairs[,  : 
-###   argument to 'which' is not logical
+## rearrange()
 
 test_that('testing rearrange() works', {
     

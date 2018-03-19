@@ -463,7 +463,7 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' GRangesList can be also provided as input x, in which case the output will be a GRL or list of data frames
 #' one for each input
 #'
-#' If x is a trackData object, then output will be a trackData object.  trackData inputs should be of length 1.
+#' If x is a gTrack object, then output will be a gTrack object.  gTrack inputs should be of length 1.
 #'
 #' if split.grl = TRUE, grl outputs are split via grl.split according to (mapped) seqname and strand
 #'
@@ -476,11 +476,11 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' @export
 setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = FALSE, pintersect = NA, by = NULL, verbose=TRUE, ...){
 
-            if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData', 'data.frame'))){
-                stop('Output format can only be "GRanges", "GRangesList", "data.frame", df", "df.all",  or "matrix"')
+            if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'gTrack', 'data.frame'))){
+                stop('Output format can only be "GRanges", "GRangesList", "gTrack", "data.frame", df", "df.all",  or "matrix"')
             }
 
-            if (is(x, 'trackData')){
+            if (is(x, 'gTrack')){
                 if (length(x)>1){
                   return(do.call('c', lapply(1:length(x), function(i) lift(.Object, x[i]))))
                 }
@@ -720,9 +720,9 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                 }
             }
             
-            ## output trackData if trackData was the input
+            ## output gTrack if gTrack was the input
             if (!is.null(x.track)){
-                out = trackData(out);
+                out = gTrack(out);
                 formatting(out) = formatting(x.track)
                 colormap(out) = colormap(x.track);
             }

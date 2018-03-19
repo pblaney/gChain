@@ -28,7 +28,7 @@ Output GRanges will retain all other values features of the query gRanges that y
 GRangesList can be also provided as input x, in which case the output will be a GRL or list of data frames
 one for each input
 
-If x is a trackData object, then output will be a trackData object.  trackData inputs should be of length 1.
+If x is a gTrack object, then output will be a gTrack object.  gTrack inputs should be of length 1.
 
 if split.grl = TRUE, grl outputs are split via grl.split according to (mapped) seqname and strand
 

@@ -18,7 +18,8 @@ Depends:
 Imports:
     gUtils,
     bamUtils,
-    GenomicAlignments
+    GenomicAlignments, 
+    gTrack
 Suggests:
     BSgenome.Hsapiens.UCSC.hg19,
     testthat,
