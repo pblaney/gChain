@@ -387,7 +387,7 @@ test_that('testing duplicate() works', {
 
 ## txChain
 
-test_that('testing duplicate() works', {
+test_that('testing txChain() works', {
     
     ## GRangesList input
     expect_equal(dim(txChain(grl2))[1], 3095693983)
@@ -475,19 +475,53 @@ test_that('testing permute() works', {
     ##  if (any(strand(c.gr)=='*'))
     foo = grl2
     strand(foo) = '*'
+    expect_equal(dim(permute(foo))[1], 3095693983) ## outputs warning message, In permute(foo) : Converting * strands to +
+    expect_equal(dim(permute(foo))[2], 3095693983)
+    gr_overlap = GRanges(1, IRanges(c(1, 8), c(10, 14)), strand=c('+','+'))
+    ##   Error: Intervals describing permutation cycles have to be disjoint
+    expect_error(permute(gr_overlap))
 
 
 })
 
 
+## BUG
 ## > rearrange(event = gr2)
 ## Error in `[<-`(`*tmp*`, ix.n, value = tmp[ix.n]) : 
 ##   subscript out of bounds
+
+### BUG 
+### > rearrange(grl.unlist(grl1))
+### + )
+### Error in which(seqnames(tile[ref.pairs[, 1]]) == seqnames(tile[ref.pairs[,  : 
+###   argument to 'which' is not logical
 
 test_that('testing rearrange() works', {
     
     ## Error in gr.flipstrand(event[-1]) : Error: GRanges input only
     expect_error(rearrange(grl1))
+    ## if (any(strand(event) == '*')){
+    ## Error in rearrange(foo) : 
+    ##   bp1 and bp2 must be signed intervals (ie either + or -)
+    foo = grl.unlist(grl2)
+    strand(foo) = '*'
+    expect_error(rearrange(foo))
+    ## if (sum(width(reduce(event))) != sum(width(event))){
+    ##   event cannot have duplicates with respect to location and strand
+    gr_overlap = GRanges(1, IRanges(c(1, 8), c(10, 14)), strand=c('+','+'))
+    expect_error(rearrange(event = gr_overlap))
+    ## default
+    expect_equal(dim(rearrange(grl.unlist(grl1)))[1], 3095693983)
+    expect_equal(dim(rearrange(grl.unlist(grl1)))[2], 3091997226)
+    ## closed = TRUE
+    expect_equal(dim(rearrange(grl.unlist(grl1), closed=FALSE))[1], 3095693983)
+    expect_equal(dim(rearrange(grl.unlist(grl1), closed=FALSE))[2], 2976729654)
+    ## retain
+    expect_equal(dim(rearrange(grl.unlist(grl1), retain=50))[1], 3095693983)
+    expect_equal(dim(rearrange(grl.unlist(grl1), retain=50))[2], 3091997226)
+    ## filter.tel = TRUE
+    expect_equal(dim(rearrange(grl.unlist(grl1), filter.tel = TRUE))[1], 3095693983)
+    expect_equal(dim(rearrange(grl.unlist(grl1), filter.tel = TRUE))[2], 3091997226)   
 
 })
 

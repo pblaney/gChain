@@ -2343,11 +2343,11 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
 {
     
     if (any(strand(event) == '*')){
-        stop('bp1 and bp2 must be signed intervals (ie either + or -)')
+        stop('bp1 and bp2 must be signed intervals (i.e. either + or -)')
     }
     
     if (sum(width(reduce(event))) != sum(width(event))){
-        stop('event cannot have duplicates with respect to location and strand')
+        stop('Event cannot have duplicates with respect to location and strand')
     }
     
     values(event)$retain = retain    
@@ -2468,7 +2468,7 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
     seg.ix = which(!tile$is.bp)
     ref.pairs = cbind(seg.ix[1:(length(seg.ix)-1)], seg.ix[2:(length(seg.ix))])
     ref.pairs = ref.pairs[ref.pairs[,1]>0 & ref.pairs[,2]!=length(tile), , drop = FALSE]
-    ref.pairs = ref.pairs[which(seqnames(tile[ref.pairs[,1]]) == seqnames(tile[ref.pairs[,2]])), , drop = FALSE]
+    ref.pairs = ref.pairs[which(as.logical(seqnames(tile[ref.pairs[,1]]) == seqnames(tile[ref.pairs[,2]]))), , drop = FALSE]
     ref.pairs = rbind(ref.pairs, cbind(-ref.pairs[,2], -ref.pairs[,1])) # reverse ref pairs
       
     adj.ref = matrix(FALSE, nrow = 2*length(tile), ncol = 2*length(tile), dimnames = rep(list(as.character(c(1:length(tile), -(1:length(tile))))), 2))
@@ -2556,6 +2556,10 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
 
     return(gChain(intA, intB, val = as.data.frame(values(intA)[, 'flag', drop = FALSE])))
 }
+
+
+
+
 
 ###########################
 # bfb
