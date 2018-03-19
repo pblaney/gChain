@@ -107,6 +107,7 @@ test_that('testing lift() works', {
     expect_equal(length(lift(foo, grl.unlist(grl2))), 502)
     expect_equal(length(lift(foo, grl.unlist(grl2), split.grl = TRUE)), 502)
     ## if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData'))){
+    expect_error(length(lift(foo, grl.unlist(grl2), format='foobar')))
     expect_error(lift(foo, c(1))) ## Error in .local(.Object, x, ...) : Error: x must be Granges object
     expect_equal(length(lift(foo, grl2)), 251)
     expect_equal(length(lift(foo, IRanges(c(3,7,13), c(5,9,16)))), 0)
@@ -381,14 +382,14 @@ test_that('testing cgChain() works', {
 ## maChain()
 
 
-## test_that('testing maChain() works', {
-##
-##    proteinseq1 = AAString("MDRKSAEMSER")
-##    proteinseq2 = AAString("MDRKSLEMSER")
-##
-##
-## })
+test_that('testing maChain() works', {
 
+    proteinseq1 = AAString("MDRKSAEMSER")
+    ## proteinseq2 = AAString("MDRKSLEMSER")
+    expect_equal(dim(maChain(grl=NULL, proteinseq1))[1], 11)
+    expect_equal(dim(maChain(grl=NULL, proteinseq1))[2], 1)
+
+})
 
 
 

@@ -474,9 +474,7 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' @param format INFO INFO
 #' @author Marcin Imielinski
 #' @export
-setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = FALSE, pintersect = NA, by = NULL,  ...){
-
-            verbose = FALSE
+setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = FALSE, pintersect = NA, by = NULL, verbose=TRUE, ...){
 
             if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData', 'data.frame'))){
                 stop('Output format can only be "GRanges", "GRangesList", "data.frame", df", "df.all",  or "matrix"')
@@ -1838,10 +1836,10 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
 
     gr = unlist(grl);
 
-    intA = GRanges(seqnames(gr)[gr.ix], IRanges::shift(grl.ir, start(gr)[gr.ix]-1),
+    intA = GRanges(seqnames(gr)[gr.ix], IRanges::shift(unlist(IRangesList(grl.ir)), start(gr)[gr.ix]-1),
                    strand = strand(gr)[gr.ix], seqlengths = seqlengths(gr));
 
-    intB = GRanges(names(pali)[pali.ix], do.call('c', pali.ir), strand = '+', seqlengths = sapply(pali, ncol))
+    intB = GRanges(names(pali)[pali.ix], unlist(IRangesList(pali.ir)), strand = '+', seqlengths = sapply(pali, ncol))
 
     if (pad==0){
         return(gChain(intA, intB))
