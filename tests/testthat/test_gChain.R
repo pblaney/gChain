@@ -181,15 +181,33 @@ test_that('testing "*" works', {
 
 test_that('testing expand() works', {
 
+    ### setMethod("expand", signature(x = "gChain"), function(x, space = NULL, shift.x = FALSE, shift.y = TRUE)
     expect_true(is(expand(gChain(grl.unlist(grl2))), 'gChain'))
+    expect_equal(dim(expand(gChain(grl.unlist(grl2))))[1], 3095693983)
+    expect_equal(dim(expand(gChain(grl.unlist(grl2))))[2], 3095693983)
+    ##
+    expect_equal(dim(expand(gChain(grl.unlist(grl2)[1:25], grl.unlist(grl1)[1:25])))[1], 3095693983)
+    expect_equal(dim(expand(gChain(grl.unlist(grl2)[1:25], grl.unlist(grl1)[1:25])))[2], 3095693983)
+    expect_equal(dim(expand(gChain(grl.unlist(grl2)[1:500], grl.unlist(grl1))))[1], 3095693983)
+    expect_equal(dim(expand(gChain(grl.unlist(grl2)[1:500], grl.unlist(grl1))))[2], 3095693983)
+    ## shift.x = FALSE, shift.y = FALSE
+    expect_equal(dim(expand(gChain(grl.unlist(grl2)), shift.x=FALSE, shift.y=FALSE))[1], 3095693983)
+    expect_equal(dim(expand(gChain(grl.unlist(grl2)), shift.x=FALSE, shift.y=FALSE))[2], 3095693983)
+    ## shift.x = TRUE, shift.y = FALSE
+    expect_equal(dim(expand(gChain(grl.unlist(grl2)), shift.x=TRUE, shift.y=FALSE))[1], 3095693983)
+    expect_equal(dim(expand(gChain(grl.unlist(grl2)), shift.x=TRUE, shift.y=FALSE))[2], 3095693983)
 
 })
 
 
 
+
+
 test_that('testing values() works', {
 
+    ## it looks like this is always an empty data.frame()
     expect_equal(values(gChain(grl.unlist(grl2))), data.frame())
+    expect_equal(values(gChain(gr2, gr2)), data.frame())
 
 })
 
@@ -211,11 +229,20 @@ test_that('testing breaks() works', {
 
     ### BUG
     expect_error(breaks(gChain()))
-    expect_error(breaks(gChain(grl.unlist(grl2))))
+    expect_equal(breaks(gChain(grl.unlist(grl2))), GRangesList())
     #### Error in gr.start(x@.galy, 2) - 1 : 
-    ####   adjustment would result in ranges with negative widths
+    ####   adjustment would result in ranges with negative widths ### happens because 'clip'
+    ## en = pmin(en, end(x))
+    ## st = pmax(st, start(x))
+    ##
+    expect_equal(breaks(gChain(grl.unlist(grl2)[1:500], grl.unlist(grl1))), GRangesList())
+    ##
+    expect_equal(breaks(gChain(gr, gr)), GRangesList())
+    expect_equal(breaks(gChain(example_genes)), GRangesList())
+    expect_error(breaks('foo'))
 
 })
+
 
 
 
@@ -246,6 +273,11 @@ test_that('testing spChain() works', {
 
     expect_true(is(spChain(grl2[1:3]), 'gChain'))
     expect_equal(width(si2gr(seqinfo(spChain(grl2[1:3]))$y)[1]), 2)
+    ##  if (is.null(names(grl))){
+    foo = grl2
+    names(foo) = NULL
+    expect_true(is(spChain(foo[1:3]), 'gChain'))
+    expect_equal(width(si2gr(seqinfo(spChain(foo[1:3]))$y)[1]), 2)   
 
 })
 
@@ -319,6 +351,11 @@ test_that('testing paChain() works', {
     ##     Error in paChain(ff1, ff2) : 
     ##   Either seq1 and/or seq2 is of width 0. This will result in an error with pairwiseAlignment(seq1, seq2).
     expect_error(paChain(ff1, ff2))
+    ##
+    fact1 = "ACTTCACCAGCTCCCTGGCGGT"
+    fact2 = "GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC"
+    expect_equal(dim(suppressWarnings(paChain(fact1, fact2, sn1 = c('one', 'two', 'three', 'four'), sn2 = c('one', 'one', 'one'))))[1], 60)
+    expect_equal(dim(suppressWarnings(paChain(fact1, fact2, sn1 = c('one', 'two', 'three', 'four'), sn2 = c('one', 'one', 'one'))))[2], 60)
 
 })
 
@@ -326,20 +363,7 @@ test_that('testing paChain() works', {
 
 
 
-## 
-## library(gChain)
-## library(testthat)
-## library(gUtils)
-## library(Biostrings)
-## bstringfoo = BStringSet(c("#CTC-NACCAGTAT", "#TTGA", "TACCTAGAG"))
-## 
-## 
-## grl = NULL
-## pali = BStringSet(c("#CTC-NACCAGTAT", "#TTGA", "TACCTAGAG"))
-## pad = 0
-## trim = TRUE
-## trim.thresh = 0 
-## 
+
 
 ## cgChain()
 

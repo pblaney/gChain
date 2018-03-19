@@ -1007,6 +1007,11 @@ setMethod("t", signature(x = "gChain"), function(x){
 #############################
 setGeneric('breaks', function(x, ...) standardGeneric('breaks'))
 setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
+
+    if (!inherits(x, 'gChain')){
+        stop("Input must be a gChain object.")
+    }
+
     if (rev){
         x = t(x)
     }
@@ -1015,10 +1020,10 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
         return(GRangesList())
     }
             
-    seed = suppressWarnings(c(GenomicRanges::shift(gr.start(x@.galy,2)-1), GenomicRanges::shift(gr.end(x@.galy, 2), 1)))
+    seed = suppressWarnings(c(GenomicRanges::shift(gr.start(x@.galy, width=2, clip=FALSE)-1), GenomicRanges::shift(gr.end(x@.galy, width=2, clip=FALSE), 1)))
     strand(seed) = '+'
     
-    ## only lift junctions that have not fallen over the edge (ie at the beginning or end of a seq)
+    ## only lift junctions that have not fallen over the edge (i.e. at the beginning or end of a seq)
     seed = seed[width(seed)>1]
     seed.l = lift(t(x), seed);
               
@@ -1036,7 +1041,6 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
     if (length(seed.l)==0){
         return(GRangesList())
     }
-            
 
     ## find all pairs of lifted ranges that are no longer contigous
     ## ie one range has query.start = 1 and the other query.start = 2
