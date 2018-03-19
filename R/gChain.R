@@ -2295,7 +2295,7 @@ permute = function(cycles){
 
     if (any(strand(c.gr)=='*')){
         warning('Converting * strands to +')
-        ix = which(strand(c.gr)=='*')
+        ix = which(as.logical(strand(c.gr)=='*'))
         strand(c.gr[ix]) = '+'
     }
     

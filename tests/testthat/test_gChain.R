@@ -472,6 +472,10 @@ test_that('testing permute() works', {
 
     expect_error(permute(grl2), NA) ## check works
     expect_equal(length(permute(grl2)), 1)
+    ##  if (any(strand(c.gr)=='*'))
+    foo = grl2
+    strand(foo) = '*'
+
 
 })
 
