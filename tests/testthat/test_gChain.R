@@ -305,6 +305,7 @@ test_that('testing paChain() works', {
     expect_equal(dim(paChain('ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG', 'GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC'))[2], 60)   
     expect_equal(dim(suppressWarnings(paChain(s1, s2)))[1], 54)
     expect_equal(dim(suppressWarnings(paChain(s1, s2)))[2], 60)
+    ## 
     ## if (inherits(seq1, 'factor')){
     factor1 = factor("ACTTCACCAGCTCCCTGGCGGTAAGTTGATCAAAGGAAACGCAAAGTTTTCAAG")
     factor2 = factor("GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC")
@@ -313,6 +314,14 @@ test_that('testing paChain() works', {
     ## score.thresh
     expect_equal(dim(suppressWarnings(paChain(factor1, factor2, score.thresh = 5000)))[1], 54)
     expect_equal(dim(suppressWarnings(paChain(factor1, factor2, score.thresh = 5000)))[2], 60)   
+    ## pintersect
+    expect_equal(dim(suppressWarnings(paChain(factor1, factor2, pintersect=TRUE, verbose=TRUE)))[1], 54)
+    expect_equal(dim(suppressWarnings(paChain(factor1, factor2, pintersect=TRUE, verbose=TRUE)))[2], 60) 
+    ## 
+    ## paChain(factor1, factor2, both.strands=TRUE)
+    ## Error in as.vector(x, mode = "character") : 
+    ##   no method for coercing this S4 class to a vector
+    ##    
     # reference sequence
     # standardseq = AAString("MARKSLEMSIR")
     # query sequences
@@ -336,6 +345,18 @@ test_that('testing paChain() works', {
     fact2 = "GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC"
     expect_equal(dim(suppressWarnings(paChain(fact1, fact2)))[1], 22)
     expect_equal(dim(suppressWarnings(paChain(fact1, fact2)))[2], 60)
+    ## ## GRanges corresponding to seq1, MUST be of same width, length, and names as seq1
+    ## 
+    ## Error in paChain(fact1, fact2, gr1 = example_dnase[1]) : 
+    ##   Widths of gr1 and seq1 not compatible 
+    expect_error(paChain(fact1,fact2, gr1=example_dnase[1]))
+    ##  Error in paChain(fact1, fact2, gr2 = example_dnase[1]) : 
+    ##   Widths of gr2 and seq1 not compatible 
+    expect_error(paChain(fact1,fact2, gr2=example_dnase[1]))
+    ## 
+    ## BUG 
+    ## paChain(fact1, fact2, gr1 = GRanges('2:50-71'), gr3 = GRanges('3:50-71'))
+    ## 
     fa1 = "A"
     fa2 = "GTTTCACTACTTCCTTTCGGGTAAGTAAATATATAAATATATAAAAATATAATTTTCATC"
     expect_equal(dim(suppressWarnings(paChain(fa1, fa2)))[1], 1)
@@ -361,7 +382,10 @@ test_that('testing paChain() works', {
 })
 
 
+library(bamUtils)
 
+example_bam = 'smallHCC1143BL.bam'   ### all tests below are specific to this BAM, and will fail otherwise 
+example_bai = 'smallHCC1143BL.bam.bai' 
 
 
 ## cgChain()
@@ -373,6 +397,14 @@ test_that('testing cgChain() works', {
     ## GRanges
     gr2$cigar = c('3M', '8M2I27M')
     ## Error in aggregate.data.frame(as.data.frame(x), ...) : 
+    ## GRanges
+    ## else if (inherits(cigar, 'GRanges')) {
+    ff = read.bam(example_bam, all=TRUE)
+    expect_equal(dim(cgChain(ff[[1]]))[1], 202)
+    expect_equal(dim(cgChain(ff[[1]]))[2], 3101804739)
+    dtt = gr2dt(ff[[1]])
+    expect_equal(dim(cgChain(dtt))[1], 101)
+    expect_equal(dim(cgChain(dtt))[2], 3095693983)
 
 })
 
@@ -617,12 +649,12 @@ test_that('testing squeeze() works', {
 
 })
 
-### grl.split BUG; 
-## ele = tryCatch(as.data.frame(grl)$element, error = function(e) e)
-## NULL
+### grl.split()
+
 test_that('grl.split() works', {
 
-    expect_error(grl.split(grl2))
+    expect_true(is(grl.split(grl2), 'GRangesList'))
+    expect_equal(length(grl.split(grl2)), 497)
 
 })
 

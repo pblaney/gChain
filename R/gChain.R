@@ -1622,6 +1622,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
         ix <- !is.na(cigar$cigar)
         cigar <- cigar[ix]
         gr <- cigar
+        gr = dt2gr(gr)
         if (!is.null(sn)){
             cig.names <- sn[ix] #cbind(seq_along(nrow(cigar)), sn)[,2]
         } else{
@@ -2895,7 +2896,7 @@ gSubset = function(gc, xnames=NULL, ynames=NULL, x.or.y = FALSE){
 grl.split = function(grl, seqname = TRUE, strand = TRUE, values = c())
 {
     ele = tryCatch(as.data.frame(grl)$element, error = function(e) e)
-    if (inherits(ele, 'error')){
+    if (inherits(ele, 'error') | is.null(ele)){
         if (is.null(names(grl))){
             nm = 1:length(names(grl))
         } else{
