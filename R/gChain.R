@@ -192,10 +192,6 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
     if (!is.data.frame(val)){
         val = as.data.frame(val)
     }
-
-    if (is.vector(val)){
-        val = data.frame(val = val)
-    }
             
     if (ncol(val)>0 & nrow(val)==1){
         .Object@values = do.call('rbind', lapply(1:length(.Object@.galx), function(y) val))
@@ -1006,17 +1002,17 @@ setMethod("t", signature(x = "gChain"), function(x){
 setGeneric('breaks', function(x, ...) standardGeneric('breaks'))
 setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
 
-    if (!inherits(x, 'gChain')){
-        stop("Input must be a gChain object.")
-    }
+    ## if (!inherits(x, 'gChain')){
+    ##     stop("Input must be a gChain object.")
+    ## }
 
     if (rev){
         x = t(x)
     }
 
-    if (length(x@.galx)==0){
-        return(GRangesList())
-    }
+    ## if (length(x@.galx)==0){
+    ##     return(GRangesList())
+    ## }
             
     seed = suppressWarnings(c(GenomicRanges::shift(gr.start(x@.galy, width=2, clip=FALSE)-1), GenomicRanges::shift(gr.end(x@.galy, width=2, clip=FALSE), 1)))
     strand(seed) = '+'

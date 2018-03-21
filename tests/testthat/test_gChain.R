@@ -65,6 +65,7 @@ test_that('testing gChain() works', {
     expect_equal(dim((gChain(gr2, scale=1)))[1], 25)   
     ## what does scale < 0 mean?
     expect_equal(dim((gChain(gr2, scale=-1)))[1], 25)
+
     
 })
 
@@ -127,6 +128,11 @@ test_that('testing lift() works', {
     expect_equal(dim(lift(foo, grl.unlist(grl2), format='matrix'))[2], 4)
     ## 
     expect_true(is(lift(gChain(example_genes), gTrack(example_genes), format='gTrack'), 'gTrack'))
+    ##  if (is(x, 'gTrack')){
+    ##             if (length(x)>1){
+
+    expect_true(is(lift(gChain(example_genes), c(gTrack(example_genes), gTrack(example_dnase), gTrack(grl.unlist(grl2))), format='gTrack'), 'gTrack'))
+
 
 })
 
@@ -232,7 +238,7 @@ test_that('testing t() works', {
 test_that('testing breaks() works', {
 
     ### BUG
-    expect_error(breaks(gChain()))
+    expect_error(breaks(gChain())) ##  adjustment would result in ranges with negative widths
     expect_equal(breaks(gChain(grl.unlist(grl2))), GRangesList())
     #### Error in gr.start(x@.galy, 2) - 1 : 
     ####   adjustment would result in ranges with negative widths ### happens because 'clip'
@@ -241,9 +247,19 @@ test_that('testing breaks() works', {
     ##
     expect_equal(breaks(gChain(grl.unlist(grl2)[1:500], grl.unlist(grl1))), GRangesList())
     ##
+    ## rev=TRUE
+    expect_equal(breaks(gChain(grl.unlist(grl2)[1:500], grl.unlist(grl1)), rev=TRUE), GRangesList())
+    ##
     expect_equal(breaks(gChain(gr, gr)), GRangesList())
     expect_equal(breaks(gChain(example_genes)), GRangesList())
-    expect_error(breaks('foo'))
+    ## if (!inherits(x, 'gChain')){ ... looks like checked by S4
+    expect_error(breaks('foo'))  
+    ## Error in (function (classes, fdef, mtable)  : 
+    ## unable to find an inherited method for function ‘breaks’ for signature ‘"character"
+    expect_error(breaks(data.table()))
+    ## Error in (function (classes, fdef, mtable)  : 
+    ##   unable to find an inherited method for function ‘breaks’ for signature ‘"data.table"’
+
 
 })
 
@@ -405,10 +421,21 @@ test_that('testing cgChain() works', {
     ff = read.bam(example_bam, all=TRUE)
     expect_equal(dim(cgChain(ff[[1]]))[1], 202)
     expect_equal(dim(cgChain(ff[[1]]))[2], 3101804739)
+    ## if (any(ix <- is.na(values(cigar)$cigar))){
+    grff = ff[[1]]
+    grff$cigar[2] = NA
+    expect_equal(dim(cgChain(grff))[1], 101)
+    expect_equal(dim(cgChain(grff))[2], 3101804739)
+    ## data.table
     dtt = gr2dt(ff[[1]])
     expect_equal(dim(cgChain(dtt))[1], 101)
     expect_equal(dim(cgChain(dtt))[2], 3095693983)
-
+    ### not sure about 'sn' parameter ....
+    expect_equal(dim(cgChain('3M1I3M1D5M', sn=2))[1], 12)
+    expect_equal(dim(cgChain('3M1I3M1D5M', sn=2))[2], 12)
+    expect_equal(dim(cgChain('3M1I3M1D5M', sn='mpos'))[1], 12)
+    expect_equal(dim(cgChain('3M1I3M1D5M', sn='mpos'))[2], 12)
+    
 })
 
 
