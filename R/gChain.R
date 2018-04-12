@@ -2652,18 +2652,21 @@ ir2vec = function(x, rev = FALSE, each = NULL){
 
 
 ### concatentate gChains
-gCat <- function(x, ...) {
+gCat <- function(x, ..., verbose = FALSE) {
 
     if (missing('x')){
         args <- list(...)
     } else{
-        args <- c(x, list(...))
+        args <- c(list(x), list(...))
     }
 
     ## remove empty
     args <- args[sapply(args, function(y) length(y@.galx)) > 0]
 
-    print('gCat: working on data tables')
+  if (verbose)
+  {
+    message('gCat: working on data tables')
+  }
     dts <- lapply(args, function(x) {
         sn <- as.character(seqnames(x@.galx))
         if (identical('NA', sn)){
@@ -2700,10 +2703,12 @@ gCat <- function(x, ...) {
     if (nrow(dtx) == 0){
         return(gChain())
     }
-
-    ## I hacked the GRanges constructor to make it way faster for large dt to Gr conversions
-    print('...gCat: making GRanges')
-    dtx[, len := max(end), by='seqnames']
+  
+  if (verbose)
+  {
+    message('...gCat: making GRanges')
+  }
+  dtx[, len := max(end), by='seqnames']
     gr.dtx <- GRanges()
     gr.dtx@ranges <- IRanges(dtx$start, dtx$end)
     gr.dtx@seqnames <- Rle(factor(dtx$seqnames, levels=unique(dtx$seqnames)))
