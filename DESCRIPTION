@@ -13,11 +13,13 @@ Depends:
     GenomicRanges (>= 1.18),
     data.table (>= 1.9),
     Matrix,
-    rtracklayer        
+    rtracklayer, 
+    Biostrings      
 Imports:
     gUtils,
+    bamUtils,
     GenomicAlignments, 
-    Biostrings
+    gTrack
 Suggests:
     BSgenome.Hsapiens.UCSC.hg19,
     testthat,

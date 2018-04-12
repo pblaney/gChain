@@ -29,23 +29,15 @@
 ## The Broad Institute of MIT and Harvard / Cancer program.
 ## marcin@broadinstitute.org
 ########################
-## require('Matrix')
-## require('GenomicRanges')
-## library('rtracklayer')
 
-## if (!file.exists(Sys.getenv('GIT_HOME')))
-##   stop('Need to set GIT_HOME environment variable to git base directory and clone isva repos into this directory before loading')
 
-#GCHAIN.DB = paste(Sys.getenv('GIT_HOME'), 'gChain/DB/', sep = "/")
-#source(paste(Sys.getenv('GIT_HOME'), 'grUtils/grUtils.R', sep = "/"))
 
 #################################################################
 #' @name gChain-class
 #' @title gChain-class
 #' @description
-#' gChain
 #'
-#' specified by pair of GRanges objects .galx and .galy, each defined on a genome (ie a Seqinfo object
+#' specified by pair of GRanges objects .galx and .galy, each defined on a genome (i.e. a Seqinfo object
 #' specifying seqlevels and seqlengths, contained inside a GRanges object).  These objects are the
 #' same length and each pair of ranges .galx[i], .galy[i] specifies a region of synteny on each "genome".
 #'
@@ -77,10 +69,10 @@
 #' 
 #' These interval pairs won't have widths that are integer multiples, however (for scales>1) the  (width(y)+pad.left+pad.right)/width(x) 
 #' will be an integer, or (for scales<1)  (width(x)+pad.left+pad.right)/width(y) will be an integer.
+#' 
 #' @import gUtils GenomicRanges Matrix
 #################################################################
 setClass('gChain', representation(.galx = 'GRanges', .galy = 'GRanges', .scale = 'numeric', .pad.left = 'integer', .pad.right = 'integer', values = 'data.frame', .n = 'numeric', .m = 'numeric'))
-
 
 suppressWarnings(removeMethod('show', 'gChain')) 
 
@@ -145,6 +137,10 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
         y = gr.fix(y, drop = F)
     }
 
+    if (!is(x, 'GRanges') | !is(y, 'GRanges')){
+        stop('Error: inputs to gChain() must be of the type GRanges')   
+    }
+
     keep = which(width(x)!=0 & width(y)!=0)
     if (any(!keep)) {
         x = x[keep]
@@ -195,10 +191,6 @@ setMethod('initialize', 'gChain', function(.Object, x = NULL, y = NULL, pad.left
 
     if (!is.data.frame(val)){
         val = as.data.frame(val)
-    }
-
-    if (is.vector(val)){
-        val = data.frame(val = val)
     }
             
     if (ncol(val)>0 & nrow(val)==1){
@@ -280,133 +272,137 @@ setMethod("gMultiply", signature(e1 = "gChain", e2 = "gChain"), function(e1, e2,
 
     # image of e2 y intervals under e1, (e2y.image is in genome C)
     e2y.image <- lift(e1, e2@.galy, pintersect=pintersect) #, mc.cores=mc.cores) #max.chunk=1e7, mc.cores=mc.cores))
-  
-    # e2 y intervals trimmed to align with e2y.image, (e2y.preimage is in genome B)
-    e2y.preimage = gr.trim(e2@.galy[values(e2y.image)$query.id], values(e2y.image)$query.start, values(e2y.image)$query.end);
-
-    # keep track of e2 link.id (ie the query id from the first lift)
-    values(e2y.preimage)$e2.link.id = values(e2y.image)$query.id
-
-    # trimmed e2 y intervals lifted backward through e2 (e2x.preimage is in genome A)
-    e2x.preimage <- lift(t(e2), e2y.preimage, pintersect=pintersect) #, mc.cores=mc.cores)   
- 
-    # only keep mappings that have e2.link.id = link.id
-    # (avoid redundant mappings arising from back and forth lift)
-    e2x.preimage = e2x.preimage[values(e2x.preimage)$e2.link.id == values(e2x.preimage)$link.id]
-    
-    # replicate e2y image and preimage along backlifted hits
-    e2y.preimage = e2y.preimage[values(e2x.preimage)$query.id]
-    e2y.image = e2y.image[values(e2x.preimage)$query.id]
-  
-    new.scale = e1@.scale[e2y.image$link.id]*e2@.scale[e2x.preimage$link.id]
-
-    ## save link ids for downstream processing
-    e1.link.ids = values(e2y.image)$link.id
-    e2.link.ids = values(e2x.preimage)$link.id
-  
-    pad.left = 0;
-    pad.right = 0;
-  
-    if (length(new.scale)>0){    
-        if (all(abs(new.scale)>1)){
-            ## to determine padding on right and left 
-            ## need to traverse both chains forward, lifting just the starts and end points
-            ## of each e1x.preimage interval and noting how many e2y.image coordinates it maps to
-            ## if this is equal to new.scale on each side then no pad necessary,
-            ## otherwise we need padding
-
-            # keeping track of link.ids is crucial to make sure we don't do redundant traversals
-            # if chains are very tangled / promiscuous
-            values(e2x.preimage)$e1.link.id = e1.link.ids;
-            values(e2x.preimage)$e2.link.id = e2.link.ids;
-    
-            e2y.starts = lift(e2, gr.trim(e2x.preimage, 1))
-            e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e2.link.id]
-            e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
-        
-            e2y.ends = lift(e2,  gr.trim(e2x.preimage, start = width(e2x.preimage)))
-            e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e2.link.id]
-            e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
-
-            ## then e1
-            e2y.starts = lift(e1, e2y.starts)
-            e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e1.link.id]
-            e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
-        
-            e2y.ends = lift(e1,  e2y.ends)
-            e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e1.link.id]
-            e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
-        
-            pad.right = abs(new.scale)[1] - width(pintersect(e2y.ends, e2y.image))
-            pad.left = abs(new.scale)[1] - width(pintersect(e2y.starts, e2y.image))
-
-            ## flip pad right and pad left for neg sccale
-            if (any(neg.map <- new.scale<0)){
-                tmp = pad.right[neg.map]
-                pad.right[neg.map] = pad.left[neg.map]
-                pad.left[neg.map] = tmp[neg.map]
-            }
-            
-            # one codon edge case - padding is meaningless, but to preserve "scale"
-            # we want to make padding + width consistent while making pad.left 0 for new.scale<0 links
-            # and pad.right 0 for new.scale > 0 one.codon links
-            one.codon = width(e2x.preimage)==1
-            pad.left[one.codon & new.scale>0] = 0
-            pad.right[one.codon & new.scale<0] = 0
-        } else if (all(abs(new.scale)<1)) {
-            ## now do the same in reverse if the scale is changing in the other direction
-            values(e2y.image)$e1.link.id = e1.link.ids
-            values(e2y.image)$e2.link.id = e2.link.ids
-        
-            e1x.starts = lift(t(e1), gr.trim(e2y.image, 1))
-            e1x.starts = e1x.starts[values(e1x.starts)$link.id == values(e1x.starts)$e1.link.id]
-            e1x.starts = e1x.starts[order(values(e1x.starts)$query.id)]
-
-            e1x.starts = lift(t(e2), e1x.starts)
-            e1x.starts = e1x.starts[values(e1x.starts)$link.id == values(e1x.starts)$e2.link.id]
-            e1x.starts = e1x.starts[order(values(e1x.starts)$query.id)]
-        
-            e1x.ends = lift(t(e1), gr.trim(e2y.image, start = width(e2y.image)))
-            e1x.ends = e1x.ends[values(e1x.ends)$link.id == values(e1x.ends)$e1.link.id]
-            e1x.ends = e1x.ends[order(values(e1x.ends)$query.id)]
-        
-            e1x.ends = lift(t(e2), e1x.ends)
-            e1x.ends = e1x.ends[values(e1x.ends)$link.id == values(e1x.ends)$e2.link.id]
-            e1x.ends = e1x.ends[order(values(e1x.ends)$query.id)]
-        
-            pad.left = (1/abs(new.scale)[1])-width(pintersect(e1x.starts, e2x.preimage))
-            pad.right = (1/abs(new.scale)[1])-width(pintersect(e1x.ends, e2x.preimage))
-
-            ## flip pad right and pad left for neg sccale
-            if (any(neg.map <- new.scale<0)){
-                tmp = pad.right[neg.map]
-                pad.right[neg.map] = pad.left[neg.map]
-                pad.left[neg.map] = tmp[neg.map]
-            }
-        
-            ## one codon edge case - padding can be on either side, we choose right
-            one.codon = width(e2y.image)==1
-            pad.left[one.codon & new.scale>0] = 0
-            pad.right[one.codon & new.scale<0] = 0
-        }
-    }
-  
-    val.e1 = values(e1)[e2y.image$link.id, ,drop = FALSE]
-    val.e2 = values(e2)[e2x.preimage$link.id, ,drop = FALSE]
-
-    if (ncol(val.e1)>0 & ncol(val.e2)>0 && FALSE) {
-        val = cbind(val.e1[, setdiff(names(val.e1), names(val.e2)), drop = FALSE], val.e2[, setdiff(names(val.e2), names(val.e1)), drop = FALSE])
-        shared.names = intersect(names(val.e2), names(val.e1))
-        if (length(shared.names)>0){
-            val[, shared.names] = val.e2[,shared.names] | val.e1[,shared.names]
-        }
-    } else if (ncol(val.e1)>0){
-        val = val.e1
+    if (length(e2y.image)==0){
+        return(GRanges())
     } else{
-        val = val.e2
-    }
+        # e2 y intervals trimmed to align with e2y.image, (e2y.preimage is in genome B)
+        e2y.preimage = gr.trim(e2@.galy[values(e2y.image)$query.id], values(e2y.image)$query.start, values(e2y.image)$query.end);
 
-    return(gChain(e2x.preimage, e2y.image, pad.left = pad.left, pad.right = pad.right, val= val))
+        # keep track of e2 link.id (ie the query id from the first lift)
+        values(e2y.preimage)$e2.link.id = values(e2y.image)$query.id
+
+        # trimmed e2 y intervals lifted backward through e2 (e2x.preimage is in genome A)
+        e2x.preimage <- lift(t(e2), e2y.preimage, pintersect=pintersect) #, mc.cores=mc.cores)   
+ 
+        # only keep mappings that have e2.link.id = link.id
+        # (avoid redundant mappings arising from back and forth lift)
+        e2x.preimage = e2x.preimage[values(e2x.preimage)$e2.link.id == values(e2x.preimage)$link.id]
+    
+        # replicate e2y image and preimage along backlifted hits
+        e2y.preimage = e2y.preimage[values(e2x.preimage)$query.id]
+        e2y.image = e2y.image[values(e2x.preimage)$query.id]
+  
+        new.scale = e1@.scale[e2y.image$link.id]*e2@.scale[e2x.preimage$link.id]
+
+        ## save link ids for downstream processing
+        e1.link.ids = values(e2y.image)$link.id
+        e2.link.ids = values(e2x.preimage)$link.id
+  
+        pad.left = 0;
+        pad.right = 0;
+  
+        if (length(new.scale)>0){    
+            if (all(abs(new.scale)>1)){
+                ## to determine padding on right and left 
+                ## need to traverse both chains forward, lifting just the starts and end points
+                ## of each e1x.preimage interval and noting how many e2y.image coordinates it maps to
+                ## if this is equal to new.scale on each side then no pad necessary,
+                ## otherwise we need padding
+
+                # keeping track of link.ids is crucial to make sure we don't do redundant traversals
+                # if chains are very tangled / promiscuous
+                values(e2x.preimage)$e1.link.id = e1.link.ids;
+                values(e2x.preimage)$e2.link.id = e2.link.ids;
+        
+                e2y.starts = lift(e2, gr.trim(e2x.preimage, 1))
+                e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e2.link.id]
+                e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
+            
+                e2y.ends = lift(e2,  gr.trim(e2x.preimage, start = width(e2x.preimage)))
+                e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e2.link.id]
+                e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
+
+                ## then e1
+                e2y.starts = lift(e1, e2y.starts)
+                e2y.starts = e2y.starts[values(e2y.starts)$link.id == values(e2y.starts)$e1.link.id]
+                e2y.starts = e2y.starts[order(values(e2y.starts)$query.id)]
+        
+                e2y.ends = lift(e1,  e2y.ends)
+                e2y.ends = e2y.ends[values(e2y.ends)$link.id == values(e2y.ends)$e1.link.id]
+                e2y.ends = e2y.ends[order(values(e2y.ends)$query.id)]
+        
+                pad.right = abs(new.scale)[1] - width(pintersect(e2y.ends, e2y.image))
+                pad.left = abs(new.scale)[1] - width(pintersect(e2y.starts, e2y.image))
+
+                ## flip pad right and pad left for neg sccale
+                if (any(neg.map <- new.scale<0)){
+                    tmp = pad.right[neg.map]
+                    pad.right[neg.map] = pad.left[neg.map]
+                    pad.left[neg.map] = tmp[neg.map]
+                }
+            
+                # one codon edge case - padding is meaningless, but to preserve "scale"
+                # we want to make padding + width consistent while making pad.left 0 for new.scale<0 links
+                # and pad.right 0 for new.scale > 0 one.codon links
+                one.codon = width(e2x.preimage)==1
+                pad.left[one.codon & new.scale>0] = 0
+                pad.right[one.codon & new.scale<0] = 0
+            } else if (all(abs(new.scale)<1)) {
+                ## now do the same in reverse if the scale is changing in the other direction
+                values(e2y.image)$e1.link.id = e1.link.ids
+                values(e2y.image)$e2.link.id = e2.link.ids
+        
+                e1x.starts = lift(t(e1), gr.trim(e2y.image, 1))
+                e1x.starts = e1x.starts[values(e1x.starts)$link.id == values(e1x.starts)$e1.link.id]
+                e1x.starts = e1x.starts[order(values(e1x.starts)$query.id)]
+    
+                e1x.starts = lift(t(e2), e1x.starts)
+                e1x.starts = e1x.starts[values(e1x.starts)$link.id == values(e1x.starts)$e2.link.id]
+                e1x.starts = e1x.starts[order(values(e1x.starts)$query.id)]
+        
+                e1x.ends = lift(t(e1), gr.trim(e2y.image, start = width(e2y.image)))
+                e1x.ends = e1x.ends[values(e1x.ends)$link.id == values(e1x.ends)$e1.link.id]
+                e1x.ends = e1x.ends[order(values(e1x.ends)$query.id)]
+        
+                e1x.ends = lift(t(e2), e1x.ends)
+                e1x.ends = e1x.ends[values(e1x.ends)$link.id == values(e1x.ends)$e2.link.id]
+                e1x.ends = e1x.ends[order(values(e1x.ends)$query.id)]
+            
+                pad.left = (1/abs(new.scale)[1])-width(pintersect(e1x.starts, e2x.preimage))
+                pad.right = (1/abs(new.scale)[1])-width(pintersect(e1x.ends, e2x.preimage))
+
+                ## flip pad right and pad left for neg sccale
+                if (any(neg.map <- new.scale<0)){    
+                    tmp = pad.right[neg.map]
+                    pad.right[neg.map] = pad.left[neg.map]
+                    pad.left[neg.map] = tmp[neg.map]
+                }
+        
+                ## one codon edge case - padding can be on either side, we choose right
+                one.codon = width(e2y.image)==1
+                pad.left[one.codon & new.scale>0] = 0
+                pad.right[one.codon & new.scale<0] = 0
+            }
+        }
+  
+        val.e1 = values(e1)[e2y.image$link.id, ,drop = FALSE]
+        val.e2 = values(e2)[e2x.preimage$link.id, ,drop = FALSE]
+
+        if (ncol(val.e1)>0 & ncol(val.e2)>0 && FALSE) {
+            val = cbind(val.e1[, setdiff(names(val.e1), names(val.e2)), drop = FALSE], val.e2[, setdiff(names(val.e2), names(val.e1)), drop = FALSE])
+            shared.names = intersect(names(val.e2), names(val.e1))
+            if (length(shared.names)>0){
+                val[, shared.names] = val.e2[,shared.names] | val.e1[,shared.names]
+            }
+        } else if (ncol(val.e1)>0){
+            val = val.e1
+        } else{
+            val = val.e2
+        }
+
+        return(gChain(e2x.preimage, e2y.image, pad.left = pad.left, pad.right = pad.right, val= val))
+    
+    }
 
 })
 
@@ -445,12 +441,11 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 
 
 
+setGeneric('lift', function(.Object, x, ...) standardGeneric('lift')) 
+
 #' @name lift
 #' @title lift
 #' @description
-#'
-#' gChain lift
-#' gchain::lift
 #'
 #' Takes GRanges input and returns GRanges output
 #' Output GRanges values() fields are tagged with the following values to allow mapping to input
@@ -459,277 +454,278 @@ setGeneric('lift', function(.Object, x, ...) standardGeneric('lift'))
 #' (3) query.end - end of this GRanges in the query.id query
 #' (4) link.id - index of link in gChain used to make this mapping
 #'
-#' output GRanges will retain all other values features of the query gRanges that yielded it.
+#' Output GRanges will retain all other values features of the query gRanges that yielded it.
 #'
-#' GRangesList can be also provided as x, in which case the output will be a GRL or list of data frames
+#' GRangesList can be also provided as input x, in which case the output will be a GRL or list of data frames
 #' one for each input
 #'
-#' If x is a trackData object, then output will be a trackData object.  trackData inputs should be of length 1.
+#' If x is a gTrack object, then output will be a gTrack object.  gTrack inputs should be of length 1.
 #'
-#' if split.grl = T, grl outputs are split via grl.split according to (mapped) seqname and strand
+#' if split.grl = TRUE, grl outputs are split via grl.split according to (mapped) seqname and strand
 #'
-#' remaining args passed on to gr.findoverlaps
+#' Remaining args passed on to gr.findoverlaps
 #'
 #' @param x GRanges to lift through this chain
 #' @param split.grl flag whether or not to split output into GRangesList for GRangesList input
+#' @param format INFO INFO
 #' @author Marcin Imielinski
 #' @export
-setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = FALSE, pintersect = NA, by = NULL,  ...){
+setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', split.grl = FALSE, pintersect = NA, by = NULL, verbose=TRUE, ...){
 
-    verbose=FALSE
+            if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'gTrack', 'data.frame'))){
+                stop('Output format can only be "GRanges", "GRangesList", "gTrack", "data.frame", df", "df.all",  or "matrix"')
+            }
 
-    if (!(format %in% c('GRanges', 'df', 'df.all', 'matrix', 'GRangesList', 'trackData'))){
-        stop('Error: Output format can only be "GRanges", "GRangesList", "df", "df.all",  or "matrix"')
-    }
-
-    if (is(x, 'trackData')){
-        if (length(x)>1){
-            return(do.call('c', lapply(1:length(x), function(i) lift(.Object, x[i]))))
-        }
+            if (is(x, 'gTrack')){
+                if (length(x)>1){
+                  return(do.call('c', lapply(1:length(x), function(i) lift(.Object, x[i]))))
+                }
                 
-        x.track = x[1];
-        x = x.track@data[[1]]
-        format = class(x);
-    } else{
-        x.track = NULL;
-    }
+                x.track = x[1];
+                x = x.track@data[[1]]
+                format = class(x);
+            } else{
+                x.track = NULL;
+            }
             
-    if (is(x, 'GRangesList')){
-        input.grl = TRUE
-        grl.names = names(x);
-        if (is.null(grl.names)){
-            grl.names = as.character(1:length(x))
-        }
+            if (is(x, 'GRangesList')){
+                input.grl = TRUE
+                grl.names = names(x);
+                if (is.null(grl.names)){
+                    grl.names = as.character(1:length(x))
+                }
                 
-        grl.val = values(x);
-        rownames(grl.val) = grl.names
+                grl.val = values(x);
+                rownames(grl.val) = grl.names
                 
-        tmp.df = tryCatch(as.data.frame(x), error = function(e) e)
 
-        if (!inherits(tmp.df, 'error')){
+                tmp.df = tryCatch(as.data.frame(x), error = function(e) e)
+
+                if (!inherits(tmp.df, 'error')){
                     #list.id = tmp.df$element
                     list.id = tmp.df$group
                     gr.name = rownames(tmp.df);
-        } else { 
-            ## gr names are screwy so do some gymnastics
-            if (!is.null(names(x))){
-                x.name = names(x)
+                } else {
+                    ## gr names are screwy so do some gymnastics
+                    if (!is.null(names(x))){
+                        x.name = names(x)
+                    } else{
+                        x.name = 1:length(x)                    
+                    }
+                    list.id = as.character(Rle(x.name, sapply(x, length)))
+                    tmp.x = x;
+                    names(tmp.x) = NULL;
+                    tmp.x = unlist(tmp.x)
+                    gr.name = names(tmp.x);
+                }
+                
+                x = unlist(x)
+                values(x)$list.id = list.id;
+                names(x) = gr.name;
+                
+                format = 'GRanges';
             } else{
-                x.name = 1:length(x)                    
+                input.grl = FALSE
             }
-            list.id = as.character(Rle(x.name, sapply(x, length)))
-            tmp.x = x;
-            names(tmp.x) = NULL;
-            tmp.x = unlist(tmp.x)
-            gr.name = names(tmp.x);
-        }
-                
-        x = unlist(x)
-        values(x)$list.id = list.id;
-        names(x) = gr.name;
-                
-        format = 'GRanges';
-    } else{
-        input.grl = FALSE
-    }
             
-    if (is(x, 'IRanges')){
-        x = GRanges('NA', x)
-    }
-
-            
-    if (!inherits(x, 'GRanges')){
-        stop('Error: x must be Granges object')              
-    }
-
-    if (length(.Object@.galx)>0){
-
-        pval <- length(seqlevels(x)) > 50 && length(seqlevels(.Object@.galx)) > 50
-        if (verbose){
-            print(paste('psmart is', pval))
-        }
-
-        if (is.null(by)){
-            system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose,  ...))
-        } else{
-            tmpx = .Object@.galx
-            values(tmpx) = values(.Object)
-            system.time(hits <- gr.findoverlaps(x, tmpx, verbose = verbose, by = by,   ...))
-        }
-
-        s.overlap = .Object@.scale[values(hits)$subject.id]
-        s.abs = abs(s.overlap)
-        neg.map = s.overlap<0
-        qd.overlap = ranges(hits)
-        qr.hits = .Object@.galy[values(hits)$subject.id];
-                
-        link.starts = start(.Object@.galx)[values(hits)$subject.id]
-        link.ends = end(.Object@.galx)[values(hits)$subject.id]
-        starts = ends = rep(NA, length(qr.hits))
-                
-        ## lift onto range
-        if (unique(abs(.Object@.scale))<1){
-            pad.left.x = .Object@.pad.left[values(hits)$subject.id]
-            pad.right.x = .Object@.pad.right[values(hits)$subject.id]                    
-                    
-            starts[neg.map] = start(qr.hits)[neg.map] + ceiling((link.ends[neg.map] + pad.right.x[neg.map] + 1 - end(qd.overlap)[neg.map])*s.abs[neg.map]) - 1
-            ends[neg.map] = start(qr.hits)[neg.map] + ceiling((link.ends[neg.map] + pad.right.x[neg.map]  + 1 - start(qd.overlap)[neg.map])*s.abs[neg.map]) - 1
-
-            starts[!neg.map] = start(qr.hits)[!neg.map] + ceiling((start(qd.overlap)[!neg.map] - link.starts[!neg.map] + 1 + pad.left.x[!neg.map])*s.abs[!neg.map]) - 1 
-            ends[!neg.map] = start(qr.hits)[!neg.map] + ceiling((end(qd.overlap)[!neg.map] - link.starts[!neg.map] + 1 + pad.left.x[!neg.map])*s.abs[!neg.map]) - 1 
-        } else {
-            pad.left.y = .Object@.pad.left[values(hits)$subject.id]
-            pad.right.y = .Object@.pad.right[values(hits)$subject.id]
-                    
-            shift1 = (start(qd.overlap) - link.starts)*abs(s.overlap)
-            shift2 = ((end(qd.overlap) - link.starts + 1)*(abs(s.overlap)))-1
-
-            starts[neg.map] = end(qr.hits)[neg.map] - (shift2[neg.map] - pad.right.y[neg.map])
-            ends[neg.map] = end(qr.hits)[neg.map] - (shift1[neg.map] - pad.right.y[neg.map])
-            starts[!neg.map] = start(qr.hits)[!neg.map] + (shift1[!neg.map] - pad.left.y[!neg.map])
-            ends[!neg.map] = start(qr.hits)[!neg.map] + (shift2[!neg.map] - pad.left.y[!neg.map])
-        }
-        out = GRanges(seqnames(qr.hits), IRanges(starts, ends), strand = strand(qr.hits), seqlengths = seqlengths(qr.hits));
-                
-        ## propagate strand flips depending on sign of s.overlap for link pair            
-        has.strand.x = as.logical(as.character(strand(x)) %in% c('+', '-'))[values(hits)$query.id]
-        flip=  has.strand.x  & s.overlap<0
-        if (any(flip)){
-            strand(out)[flip] = c('-', '+')[1 + as.logical(strand(x)=='-')][values(hits)$query.id][flip]
-        }
-        if (any(!flip)){
-            strand(out)[!flip] = strand(x)[values(hits)$query.id][!flip]
-        }
-
-        ## if y links have unspecified strand then do not propagate strand information 
-        has.strand.y = as.logical(as.character(strand(.Object@.galy)) %in% c('+', '-'))[values(hits)$subject.id]
-        if (any(!has.strand.y)){
-            strand(out)[!has.strand.y] = '*';
-        }
-                
-        ## propagate query GRanges values
-        values(out) = values(x)[values(hits)$query.id, , drop = FALSE]
-                
-        ## save query indices and coordinates
-        values(out)$query.id = values(hits)$query.id
-        values(out)$query.start = start(qd.overlap)-start(x)[values(hits)$query.id] + 1
-        values(out)$query.end = end(qd.overlap) - start(x)[values(hits)$query.id] + 1            
-        values(out)$link.id = values(hits)$subject.id
-
-        if (length(out)>0){
-            out = out[order(values(out)$query.id, values(out)$query.start)]
-        }
-
-    } else{
-        out = GRanges(seqlengths = seqlengths(.Object@.galy))
-    }
-    ## we will expand the output 
-    if (format != 'GRanges'){
-        query.widths = width(x[values(out)$query.id])
-        query.length = sum(query.widths)
-        query.offsets = c(0, cumsum(query.widths[1:(length(query.widths)-1)]))[1:length(query.widths)]
-        link.scales = .Object@.scale[values(out)$link.id]
-        x.expand = pmax(abs(link.scales), 1)
-                
-        ## skeleton df to catch all coordinates of all hits, expanding for links with abs(scales) > 1
-        df.out = data.frame(query.coord = 1:query.length, query.id = as.vector(Rle(values(out)$query.id, query.widths)),
-            chr = NA, pos = NA, stringsAsFactors = F)
-                
-
-        ## identify (flattened) x indices that map to at least one y index
-        mapped.ix = ir2vec(IRanges::shift(IRanges(values(out)$query.start, values(out)$query.end), query.offsets), each = x.expand);
-        unmapped.ix = setdiff(1:query.length, mapped.ix)
-                
-        ## look up y vals corresponding to mapped positions
-        ## expand these vals when |scale| < 1,
-        ## reversing where appropriate (ie scale < 0)                
-        df.vals = data.frame(chr = as.character(Rle(as.character(seqnames(out)), width(out))),
-            pos = ir2vec(ranges(out), link.scales<0), stringsAsFactors = F)
-
-        ## if any links scale down
-        ## need to expand df.vals by appropriate link.scales, being mindful of left and right edge issues
-        down.scaled = abs(link.scales)<1
-        if (any(down.scaled)) {
-            ## length should = nrow(df.vals)
-            ## expand represents how many times we plan to copy each row of df.vals
-            y.expand = rep(1, length(link.scales));
-            y.expand[down.scaled] = 1/abs(link.scales)[down.scaled]
-
-            xq.starts = start(x[values(out)$query.id]) + values(out)$query.start - 1;
-            xq.ends = start(x[values(out)$query.id]) + values(out)$query.end - 1;
-                    
-            ## need to take care of "fractional" edge cases on both left and right of each interval
-            ## ie y coordinates for which there are fewer than y.expand[k] x coordinates assigned 
-            right.edge.ix = cumsum(width(out))
-            left.edge.ix = c(0, right.edge.ix[1:(length(right.edge.ix)-1)])[1:length(right.edge.ix)] + 1
-            mod.left = y.expand[down.scaled]-
-                ((xq.starts[down.scaled] - start(.Object@.galx[values(out)$link.id])[down.scaled]) %% y.expand[down.scaled])
-            mod.right = 1+((xq.ends[down.scaled]-start(.Object@.galx[values(out)$link.id])[down.scaled]) %% y.expand[down.scaled])
-                    
-            ## expand y.expand to have length = nrow(df.vals)
-            y.expand = as.integer(Rle(y.expand, width(out)));  
-            y.expand[right.edge.ix[down.scaled]] = mod.right
-            y.expand[left.edge.ix[down.scaled]] = mod.lefts
-                    
-            ## now replicate the appropriate rows of df.vals
-            df.vals = df.vals[as.integer(Rle(1:length(y.expand), y.expand)), ];
-        }
-
-        tmp.out = df.out[mapped.ix, ]
-        tmp.out[, c('chr', 'pos')] = df.vals[, c('chr', 'pos')]                
-        df.out = rbind(df.out[unmapped.ix, ], tmp.out)
-        df.out = df.out[order(df.out$query.coord), ]
-
-        ## df.vals should have the same dimension as ix
-        ## use to populate df.out
-
-        if (format == 'df'){
-            df.out = df.out[!duplicated(df.out[, c('query.coord')]), ];
-            if (input.grl){
-                df.out = split(df.out, df.out$list.id)
+            if (is(x, 'IRanges')){
+                x = GRanges('NA', x)
             }
-        } else{
-            if (input.grl){
-                df.out = split(df.out, df.out$list.id)                    
+
+            if (!inherits(x, 'GRanges')){
+                stop('Error: x must be Granges object')              
             }
-                    # return(df.out)
-        }
-        out = df.out;
-    } else {                
-        if (input.grl){
-            if (length(out)>0){
-                out = split(out, values(out)$list.id)
-                            
-                if (!is.null(grl.names)){
-                    ix = match(names(out), grl.names)
-                    names(out) = grl.names[ix]
+
+            if (length(.Object@.galx)>0){
+
+                pval <- length(seqlevels(x)) > 50 && length(seqlevels(.Object@.galx)) > 50
+                if (verbose){
+                    print(paste('psmart is', pval))
+                }
+                ## if (!is.na(pval) && is.na(pintersect))
+                ##   hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, ...) # pairs of matches
+                ## else
+
+                if (is.null(by)){
+                    system.time(hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose,  ...))
                 } else{
-                    ix = names(out);                                    
+                    tmpx = .Object@.galx
+                    values(tmpx) = values(.Object)
+                    system.time(hits <- gr.findoverlaps(x, tmpx, verbose = verbose, by = by,   ...))
                 }
 
-                if (ncol(grl.val)>0){
-                    values(out) = grl.val[ix, ,drop = FALSE];
+                s.overlap = .Object@.scale[values(hits)$subject.id]
+                s.abs = abs(s.overlap)
+                neg.map = s.overlap<0
+                qd.overlap = ranges(hits)
+                qr.hits = .Object@.galy[values(hits)$subject.id];
+                
+                link.starts = start(.Object@.galx)[values(hits)$subject.id]
+                link.ends = end(.Object@.galx)[values(hits)$subject.id]
+                starts = ends = rep(NA, length(qr.hits))
+                
+                ## lift onto range
+                if (unique(abs(.Object@.scale))<1){
+                    pad.left.x = .Object@.pad.left[values(hits)$subject.id]
+                    pad.right.x = .Object@.pad.right[values(hits)$subject.id]                    
+                    
+                    starts[neg.map] = start(qr.hits)[neg.map] + ceiling((link.ends[neg.map] + pad.right.x[neg.map] + 1 - end(qd.overlap)[neg.map])*s.abs[neg.map]) - 1
+                    ends[neg.map] = start(qr.hits)[neg.map] + ceiling((link.ends[neg.map] + pad.right.x[neg.map]  + 1 - start(qd.overlap)[neg.map])*s.abs[neg.map]) - 1
+
+                    starts[!neg.map] = start(qr.hits)[!neg.map] + ceiling((start(qd.overlap)[!neg.map] - link.starts[!neg.map] + 1 + pad.left.x[!neg.map])*s.abs[!neg.map]) - 1 
+                    ends[!neg.map] = start(qr.hits)[!neg.map] + ceiling((end(qd.overlap)[!neg.map] - link.starts[!neg.map] + 1 + pad.left.x[!neg.map])*s.abs[!neg.map]) - 1 
+                } else {
+                    pad.left.y = .Object@.pad.left[values(hits)$subject.id]
+                    pad.right.y = .Object@.pad.right[values(hits)$subject.id]
+                    
+                    shift1 = (start(qd.overlap) - link.starts)*abs(s.overlap)
+                    shift2 = ((end(qd.overlap) - link.starts + 1)*(abs(s.overlap)))-1
+
+                    starts[neg.map] = end(qr.hits)[neg.map] - (shift2[neg.map] - pad.right.y[neg.map])
+                    ends[neg.map] = end(qr.hits)[neg.map] - (shift1[neg.map] - pad.right.y[neg.map])
+                    starts[!neg.map] = start(qr.hits)[!neg.map] + (shift1[!neg.map] - pad.left.y[!neg.map])
+                    ends[!neg.map] = start(qr.hits)[!neg.map] + (shift2[!neg.map] - pad.left.y[!neg.map])
                 }
-                            
-                if (split.grl){
-                    out = grl.split(out)
+                out = GRanges(seqnames(qr.hits), IRanges(starts, ends), strand = strand(qr.hits), seqlengths = seqlengths(qr.hits));
+                
+                ## propagate strand flips depending on sign of s.overlap for link pair            
+                has.strand.x = as.logical(as.character(strand(x)) %in% c('+', '-'))[values(hits)$query.id]
+                flip=  has.strand.x  & s.overlap<0
+                if (any(flip)){
+                    strand(out)[flip] = c('-', '+')[1 + as.logical(strand(x)=='-')][values(hits)$query.id][flip]
                 }
+                if (any(!flip)){
+                    strand(out)[!flip] = strand(x)[values(hits)$query.id][!flip]
+                }
+
+                ## if y links have unspecified strand then do not propagate strand information 
+                has.strand.y = as.logical(as.character(strand(.Object@.galy)) %in% c('+', '-'))[values(hits)$subject.id]
+                if (any(!has.strand.y)){
+                    strand(out)[!has.strand.y] = '*';
+                }
+                
+                ## propagate query GRanges values
+                values(out) = values(x)[values(hits)$query.id, , drop = FALSE]
+                
+                ## save query indices and coordinates
+                values(out)$query.id = values(hits)$query.id
+                values(out)$query.start = start(qd.overlap)-start(x)[values(hits)$query.id] + 1
+                values(out)$query.end = end(qd.overlap) - start(x)[values(hits)$query.id] + 1            
+                values(out)$link.id = values(hits)$subject.id
+
+                if (length(out)>0){
+                    out = out[order(values(out)$query.id, values(out)$query.start)]
+                }
+
             } else{
-                out = gr.fix(GRangesList(), out)
+                out = GRanges(seqlengths = seqlengths(.Object@.galy))
             }
-        }
-    }
+            ## we will expand the output 
+            if (format != 'GRanges'){
+                query.widths = width(x[values(out)$query.id])
+                query.length = sum(query.widths)
+                query.offsets = c(0, cumsum(query.widths[1:(length(query.widths)-1)]))[1:length(query.widths)]
+                link.scales = .Object@.scale[values(out)$link.id]
+                x.expand = pmax(abs(link.scales), 1)
+                
+                ## skeleton df to catch all coordinates of all hits, expanding for links with abs(scales) > 1
+                df.out = data.frame(query.coord = 1:query.length, query.id = as.vector(Rle(values(out)$query.id, query.widths)),
+                  chr = NA, pos = NA, stringsAsFactors = F)
+                
+                ## identify (flattened) x indices that map to at least one y index
+                mapped.ix = ir2vec(shift(IRanges(values(out)$query.start, values(out)$query.end), query.offsets), each = x.expand);
+                unmapped.ix = setdiff(1:query.length, mapped.ix)
+                
+                ## look up y vals corresponding to mapped positions
+                ## expand these vals when |scale| < 1,
+                ## reversing where appropriate (ie scale < 0)                
+                df.vals = data.frame(chr = as.character(Rle(as.character(seqnames(out)), width(out))),
+                  pos = ir2vec(ranges(out), link.scales<0), stringsAsFactors = F)
+
+                ## if any links scale down
+                ## need to expand df.vals by appropriate link.scales, being mindful of left and right edge issues
+                down.scaled = abs(link.scales)<1
+                if (any(down.scaled)) {
+                    ## length should = nrow(df.vals)
+                    ## expand represents how many times we plan to copy each row of df.vals
+                    y.expand = rep(1, length(link.scales));
+                    y.expand[down.scaled] = 1/abs(link.scales)[down.scaled]
+
+                    xq.starts = start(x[values(out)$query.id]) + values(out)$query.start - 1;
+                    xq.ends = start(x[values(out)$query.id]) + values(out)$query.end - 1;
+                    
+                    ## need to take care of "fractional" edge cases on both left and right of each interval
+                    ## ie y coordinates for which there are fewer than y.expand[k] x coordinates assigned 
+                    right.edge.ix = cumsum(width(out))
+                    left.edge.ix = c(0, right.edge.ix[1:(length(right.edge.ix)-1)])[1:length(right.edge.ix)] + 1
+                    mod.left = y.expand[down.scaled]-
+                      ((xq.starts[down.scaled] - start(.Object@.galx[values(out)$link.id])[down.scaled]) %% y.expand[down.scaled])
+                    mod.right = 1+((xq.ends[down.scaled]-start(.Object@.galx[values(out)$link.id])[down.scaled]) %% y.expand[down.scaled])
+                    
+                    ## expand y.expand to have length = nrow(df.vals)
+                    y.expand = as.integer(Rle(y.expand, width(out)));  
+                    y.expand[right.edge.ix[down.scaled]] = mod.right
+                    y.expand[left.edge.ix[down.scaled]] = mod.lefts
+                    
+                    ## now replicate the appropriate rows of df.vals
+                    df.vals = df.vals[as.integer(Rle(1:length(y.expand), y.expand)), ];
+                }
+
+                tmp.out = df.out[mapped.ix, ]
+                tmp.out[, c('chr', 'pos')] = df.vals[, c('chr', 'pos')]                
+                df.out = rbind(df.out[unmapped.ix, ], tmp.out)
+                df.out = df.out[order(df.out$query.coord), ]
+
+                ## df.vals should have the same dimension as ix
+                ## use to populate df.out
+
+                if (format == 'df'){
+                    df.out = df.out[!duplicated(df.out[, c('query.coord')]), ];
+                    if (input.grl){
+                        df.out = split(df.out, df.out$list.id)
+                    }
+                } else {
+                    if (input.grl){
+                        df.out = split(df.out, df.out$list.id)                    
+                    }
+
+                }
+                out = df.out;
+            } else {                
+                if (input.grl){
+                    if (length(out)>0){
+                            out = split(out, values(out)$list.id)
+                            
+                            if (!is.null(grl.names)){
+                                ix = match(names(out), grl.names)
+                                names(out) = grl.names[ix]
+                            } else{
+                                ix = names(out);                                    
+                            }
+
+                            if (ncol(grl.val)>0){
+                                values(out) = grl.val[ix, ,drop = FALSE];
+                            }
+                            
+                            if (split.grl){
+                                out = grl.split(out)
+                            }
+                    } else{
+                        out = gr.fix(GRangesList(), out)
+                    }
+                }
+            }
             
-    ## output trackData if trackData was the input
-    if (!is.null(x.track)){
-        out = trackData(out);
-        formatting(out) = formatting(x.track)
-        colormap(out) = colormap(x.track);
-    }
+            ## output gTrack if gTrack was the input
+            if (!is.null(x.track)){
+                out = gTrack(out);
+                formatting(out) = formatting(x.track)
+                colormap(out) = colormap(x.track);
+            }
             
-    return(out)            
-          
+            return(out)            
 })
+
 
 
 
@@ -1005,18 +1001,23 @@ setMethod("t", signature(x = "gChain"), function(x){
 #############################
 setGeneric('breaks', function(x, ...) standardGeneric('breaks'))
 setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
+
+    ## if (!inherits(x, 'gChain')){
+    ##     stop("Input must be a gChain object.")
+    ## }
+
     if (rev){
         x = t(x)
     }
 
-    if (length(x@.galx)==0){
-        return(GRangesList())
-    }
+    ## if (length(x@.galx)==0){
+    ##     return(GRangesList())
+    ## }
             
-    seed = suppressWarnings(c(GenomicRanges::shift(gr.start(x@.galy,2)-1), GenomicRanges::shift(gr.end(x@.galy, 2), 1)))
+    seed = suppressWarnings(c(GenomicRanges::shift(gr.start(x@.galy, width=2, clip=FALSE)-1), GenomicRanges::shift(gr.end(x@.galy, width=2, clip=FALSE), 1)))
     strand(seed) = '+'
     
-    ## only lift junctions that have not fallen over the edge (ie at the beginning or end of a seq)
+    ## only lift junctions that have not fallen over the edge (i.e. at the beginning or end of a seq)
     seed = seed[width(seed)>1]
     seed.l = lift(t(x), seed);
               
@@ -1034,7 +1035,6 @@ setMethod("breaks", signature(x = "gChain"), function(x, rev = FALSE) {
     if (length(seed.l)==0){
         return(GRangesList())
     }
-            
 
     ## find all pairs of lifted ranges that are no longer contigous
     ## ie one range has query.start = 1 and the other query.start = 2
@@ -1117,7 +1117,7 @@ setMethod('[', 'gChain', function(x, i){
 #' instantiate a new gChain
 #'
 #' @export
-gChain = function(x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame()) new('gChain', x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame())
+gChain = function(x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL, val = data.frame()) new('gChain', x=x, y=y, pad.left = pad.left, pad.right = pad.right, scale = scale, val = val)
 
 ######
 # Basic gChain synthesizers
@@ -1193,22 +1193,22 @@ spChain = function(grl, rev = FALSE){
 #' @export
 #' @author Marcin Imielinski
 paChain = function(seq1, seq2,
-  sn1 = NULL, ## character vector of seqnames for seq1, should  be same length as seq1
-  sn2 = NULL, ## character vector of seqnames for seq2, should  be same length as seq2
-  gr1 = NULL, ## GRanges corresponding to seq1, MUST be of same width, length, and names as seq1
-  gr2 = NULL, ## GRanges corresponding to seq2, MUST be of same width, length, and names as seq2  
-  pa = NULL, 
-  verbose = TRUE,
-  sl1 = NULL, ## seqlengths vector for seq1 (useful if provided seqs exist in larger set)
-  sl2 = NULL, ## seqlengths vector for seq2 (useful if provdied seqs if exist in larger set)  
-  score.thresh = NULL, ## optional numeric scalar specifying lowest score alignment to include in chain
-  both.strands = FALSE, # both strands = T will try to align seq1 to both strands of seq2
-  keep.best = TRUE, # if both.strands = T, keep.best = T will only keep the best seq2 alignment (forward vs backward) for each seq1
-  assume.dna = TRUE, 
-  mc.cores = 1, ## how many cores
-  mc.chunks = mc.cores,  ## how many chunks to split the data when farming out to each core
-  pintersect = FALSE, ## calls to gr.findoverlaps (and to lift) use pintersect. See gr.findoverlaps. Best for small genomes (e.g. reads)
-  ...)
+    sn1 = NULL, ## character vector of seqnames for seq1, should  be same length as seq1
+    sn2 = NULL, ## character vector of seqnames for seq2, should  be same length as seq2
+    gr1 = NULL, ## GRanges corresponding to seq1, MUST be of same width, length, and names as seq1
+    gr2 = NULL, ## GRanges corresponding to seq2, MUST be of same width, length, and names as seq2  
+    pa = NULL, 
+    verbose = TRUE,
+    sl1 = NULL, ## seqlengths vector for seq1 (useful if provided seqs exist in larger set)
+    sl2 = NULL, ## seqlengths vector for seq2 (useful if provdied seqs if exist in larger set)  
+    score.thresh = NULL, ## optional numeric scalar specifying lowest score alignment to include in chain
+    both.strands = FALSE, # both strands = T will try to align seq1 to both strands of seq2
+    keep.best = TRUE, # if both.strands = T, keep.best = T will only keep the best seq2 alignment (forward vs backward) for each seq1
+    assume.dna = TRUE, 
+    mc.cores = 1, ## how many cores
+    mc.chunks = mc.cores,  ## how many chunks to split the data when farming out to each core
+    pintersect = FALSE, ## calls to gr.findoverlaps (and to lift) use pintersect. See gr.findoverlaps. Best for small genomes (e.g. reads)
+    ...)
 {
 
     if (inherits(seq1, 'factor')){
@@ -1305,6 +1305,10 @@ paChain = function(seq1, seq2,
             }
         }      
     }
+
+    if ((width(seq1)==0) | (width(seq2)==0)){
+        stop("Either seq1 and/or seq2 is of width 0. This will result in an error with pairwiseAlignment(seq1, seq2).")
+    }
   
     ## check to make sure that each sequence name maps to exactly one sequence in both seq1 and seq2    
     if (any(duplicated(sn1)) && FALSE){
@@ -1317,9 +1321,7 @@ paChain = function(seq1, seq2,
         useq2 = unique(as.character(seq2))
         seq2.ix = match(as.character(seq2), useq2)      
         uname2 = unique(sn2)
-        ##namecheck = sapply(uname2, function(x) length(unique(seq2.ix[sn2==x])))>1
-        ##if (any(namecheck))
-        ##  stop(sprintf('Every seq2 sequence name should only be assigned to one seq2 sequence.  Please check the sequence-name mapping for the following sequences in seq2: %s', uname2[namecheck]))
+
     }
   
     if (!is.null(gr1)){
@@ -1377,7 +1379,7 @@ paChain = function(seq1, seq2,
             sn2 = c(sn2, sn2.tmp)
         }
 
-        opts <- list(...)
+        opts <- list() ### list(...)
         if ('numchunk' %in% names(opts)){
             numchunk <- opts$numchunk
         } else{
@@ -1385,9 +1387,9 @@ paChain = function(seq1, seq2,
         }
 
         if (mc.cores > 1){
-            pa <- mc.pairwiseAlignment(seq1, seq2, numchunk=numchunk, mc.cores=mc.cores, ...)
+            pa <- mc.pairwiseAlignment(seq1, seq2, numchunk=numchunk, mc.cores=mc.cores) ## , ...)
         } else{
-            pa <- pairwiseAlignment(seq1, seq2, ...)
+            pa <- pairwiseAlignment(seq1, seq2) 
         }
     }
 
@@ -1404,7 +1406,7 @@ paChain = function(seq1, seq2,
     uix.1 = match(uname1, sn1)
     uix.2 = match(uname2, sn2);
   
-    ## now build two gChains mapping the two sequence spaces to the "alignment space"
+    ## Now build two gChains mapping the two sequence spaces to the "alignment space"
     ## where each alignment yields its own chromosome
     ## define alignment, subject, and pattern "genomes"
 
@@ -1459,10 +1461,10 @@ paChain = function(seq1, seq2,
 
     sinfo1 = Seqinfo(seqlengths = sl1, seqnames = names(sl1))
     sinfo2 = Seqinfo(seqlengths = sl2, seqnames = names(sl2))
-    sinfo.ali = Seqinfo(seqlengths = nchar(pa), seqnames = as.character(1:length(pa)))
+    sinfo.ali = Seqinfo(seqlengths = nchar(as.character(pa)), seqnames = as.character(1:length(pa)))
 
     ## deletions specify pattern gaps in alignment coordinates
-    del.len = elementLengths(deletion(pa))
+    del.len = elementNROWS(deletion(pa))
     del.ix = unlist(sapply(1:length(del.len), function(x) rep(x, del.len[x])))
 
     if (length(del.ix)>0){
@@ -1480,8 +1482,8 @@ paChain = function(seq1, seq2,
     ali2pat = gChain(links(tmp)$x, GRanges(sn1[keep.ix[al.ix]], ## make sure to shift to account for start gap
         ranges = GenomicRanges::shift(ranges(links(tmp)$y), start(Biostrings::pattern(pa[al.ix]))-1), strand = '+', seqlengths = seqlengths(sinfo1)))
   
-    # insertions specify subject gaps in alignment coordinates
-    ins.len = elementLengths(insertion(pa))
+    ## insertions specify subject gaps in alignment coordinates
+    ins.len = elementNROWS(insertion(pa))
     ins.ix = unlist(sapply(1:length(ins.len), function(x) rep(x, ins.len[x])))
   
     if (length(ins.ix)>0){
@@ -1560,9 +1562,9 @@ paChain = function(seq1, seq2,
 #' @name cgChain
 #' @title cgChain
 #' @description
-#' cgChain (i.e. "CIGAR ")
+#' cgChain (i.e. "CIGAR")
 #'
-#' processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
+#' Processes a pairwise alignment from read to genomic coordinates inputted as a vector of CIGAR strings
 #' representing edit operations from subject to pattern.
 #' ie an insertion corresponds a gap in the subject and deletion corresponds to a gap in the pattern
 #' returns a chain that maps subject to pattern (e.g. genome space to read space)
@@ -1592,7 +1594,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
         if (!is.null(sn)){
             cig.names = cbind(1:length(cigar), sn)[,2]
         } else{
-            cig.names = paste(values(cigar)$qname, ifelse(bamflag(values(cigar)$flag)[, 'isFirstMateRead'], 1, 2))
+            cig.names = paste(values(cigar)$qname, ifelse(bamUtils::bamflag(values(cigar)$flag)[, 'isFirstMateRead'], 1, 2))
         } 
         
         cigar = structure(values(cigar)$cigar, names = cig.names)
@@ -1604,11 +1606,11 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
         }
         gr = cigar;
 
-	    if (!is.null(sn)){
+        if (!is.null(sn)){
             cig.names = cbind(1:length(cigar), sn)[,2]
         } else{
-            cig.names = paste(values(cigar)$qname, ifelse(bamflag(values(cigar)$flag)[, 'isFirstMateRead'],'1',
-                ifelse(bamflag(values(cigar)$flag)[, 'isSecondMateRead'], '2', '')), sep = '')
+            cig.names = paste(values(cigar)$qname, ifelse(bamUtils::bamflag(values(cigar)$flag)[, 'isFirstMateRead'],'1',
+                ifelse(bamUtils::bamflag(values(cigar)$flag)[, 'isSecondMateRead'], '2', '')), sep = '')
         }
         
         cigar = structure(cigar$cigar, names = cig.names)
@@ -1616,6 +1618,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
         ix <- !is.na(cigar$cigar)
         cigar <- cigar[ix]
         gr <- cigar
+        gr = dt2gr(gr)
         if (!is.null(sn)){
             cig.names <- sn[ix] #cbind(seq_along(nrow(cigar)), sn)[,2]
         } else{
@@ -1748,9 +1751,9 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
 #' @title maChain
 #' @description
 #'
-#' multiple sequence alignment chain
+#' Multiple sequence alignment chain
 #'
-#' Takes input GRanges List of interval coordinates corresponding to sequences
+#' Takes input GRangesList of interval coordinates corresponding to sequences
 #' contributing to alignments in pali. 'pali' is a list of alignment matrices
 #' (containing letters from the original sequences and '-', '.' for gaps)
 #'
@@ -1760,7 +1763,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
 #'
 #' trim will remove all alignment columns that have only gaps
 #'
-#' alternatively .. grl can be an XStringSet object with a "names" attribute containing
+#' alternatively, grl can be an XStringSet object with a "names" attribute containing
 #' Biostrings (eg AA or DNA) and gap ("-") characters.  Can also be a list of XStringSet objects.
 #'
 #' if grl is NULL, then it is assumed that the first (last) non gapped character in each MSA alignment entry
@@ -1772,7 +1775,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
   )
 {
     ## will only make chain for a single alignment
-    if (inherits(pali, 'XStringSet')){
+    if (inherits(pali, 'XStringSet') | inherits(pali, 'XString')){
         pali = list(pali)
     } 
 
@@ -1780,7 +1783,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
         names(pali) = 1:length(pali)
     }
     ## will
-    if (inherits(pali[[1]], 'XStringSet')){
+    if (inherits(pali[[1]], 'XStringSet') | inherits(pali[[1]], 'XString') ){
         npali = names(pali)
         
         pali = lapply(pali, function(this.pali) t(matrix(unlist(strsplit(as.character(this.pali), '')), ncol = length(this.pali), dimnames = list(NULL, names(this.pali)))))
@@ -1788,7 +1791,10 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
     }
     ## assume that pali rows represent the entire sequence
     if (is.null(grl)){
-        grl = do.call('GRangesList', lapply(pali, function(this.pali) GRanges(rownames(this.pali), IRanges(start = 1, rowSums(this.pali != '-')))))
+        ## Error in validObject(.Object) : 
+        ##   invalid class “GRanges” object: 'mcols(x)' is not parallel to 'x'
+
+        grl = do.call('GRangesList', lapply(pali, function(this.pali) GRanges(rownames(as.data.frame(this.pali)), IRanges(start = 1, rowSums(as.data.frame(this.pali) != '-')))))
         names(grl) = names(pali)
     }
            
@@ -1804,7 +1810,7 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
     if (is.null(names(grl))){
         names(grl) = names(pali)
     }
-    ## names(grl) = 1:length(grl)
+    
     
     if (!identical(names(grl), names(pali))){
         stop('Names of grl and pali should be identical')
@@ -1827,10 +1833,10 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
 
     gr = unlist(grl);
 
-    intA = GRanges(seqnames(gr)[gr.ix], IRanges::shift(grl.ir, start(gr)[gr.ix]-1),
+    intA = GRanges(seqnames(gr)[gr.ix], IRanges::shift(unlist(IRangesList(grl.ir)), start(gr)[gr.ix]-1),
                    strand = strand(gr)[gr.ix], seqlengths = seqlengths(gr));
 
-    intB = GRanges(names(pali)[pali.ix], do.call('c', pali.ir), strand = '+', seqlengths = sapply(pali, ncol))
+    intB = GRanges(names(pali)[pali.ix], unlist(IRangesList(pali.ir)), strand = '+', seqlengths = sapply(pali, ncol))
 
     if (pad==0){
         return(gChain(intA, intB))
@@ -1860,12 +1866,12 @@ txChain = function(grl, txname = NULL, translate = FALSE, exonFrame.field = 'exo
     }
     
     if (!is.null(val)){
-        if (nrow(val) != length(grl)){
-            stop('val data frame must correspond to grl, i.e. have nrows = length(grl)')
-        }
-
         if (!is.data.frame(val)){
             val = as.data.frame(val)
+        }
+
+        if (is.null(nrow(val)) | (nrow(val) != length(grl))){
+            stop('Error: val data.frame must correspond to grl, i.e. have nrows = length(grl)')
         }
     }
 
@@ -2006,7 +2012,7 @@ copy = function(from, ## granges of source intervals
 
     if (any(strand(from) == '*')){
         warning('converting some * strands in "from" to +')
-        strand(from)[which(strand(from)=='*')] = '+';
+        strand(from)[which(as.logical(strand(from)=='*'))] = '+';
     }
 
     if (is.character(to)){
@@ -2278,7 +2284,7 @@ permute = function(cycles){
 
     if (any(strand(c.gr)=='*')){
         warning('Converting * strands to +')
-        ix = which(strand(c.gr)=='*')
+        ix = which(as.logical(strand(c.gr)=='*'))
         strand(c.gr[ix]) = '+'
     }
     
@@ -2326,11 +2332,11 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
 {
     
     if (any(strand(event) == '*')){
-        stop('bp1 and bp2 must be signed intervals (ie either + or -)')
+        stop('bp1 and bp2 must be signed intervals (i.e. either + or -)')
     }
     
     if (sum(width(reduce(event))) != sum(width(event))){
-        stop('event cannot have duplicates with respect to location and strand')
+        stop('Event cannot have duplicates with respect to location and strand')
     }
     
     values(event)$retain = retain    
@@ -2451,7 +2457,7 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
     seg.ix = which(!tile$is.bp)
     ref.pairs = cbind(seg.ix[1:(length(seg.ix)-1)], seg.ix[2:(length(seg.ix))])
     ref.pairs = ref.pairs[ref.pairs[,1]>0 & ref.pairs[,2]!=length(tile), , drop = FALSE]
-    ref.pairs = ref.pairs[which(seqnames(tile[ref.pairs[,1]]) == seqnames(tile[ref.pairs[,2]])), , drop = FALSE]
+    ref.pairs = ref.pairs[which(as.logical(seqnames(tile[ref.pairs[,1]]) == seqnames(tile[ref.pairs[,2]]))), , drop = FALSE]
     ref.pairs = rbind(ref.pairs, cbind(-ref.pairs[,2], -ref.pairs[,1])) # reverse ref pairs
       
     adj.ref = matrix(FALSE, nrow = 2*length(tile), ncol = 2*length(tile), dimnames = rep(list(as.character(c(1:length(tile), -(1:length(tile))))), 2))
@@ -2540,6 +2546,10 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
     return(gChain(intA, intB, val = as.data.frame(values(intA)[, 'flag', drop = FALSE])))
 }
 
+
+
+
+
 ###########################
 # bfb
 #
@@ -2549,7 +2559,7 @@ rearrange = function(event, ## this is a GRanges representing breakpoints compri
 #
 #
 ###########################
-bfb = function(chr, numcycles = 5, w = 0.2, wd = 0.4, end = TRUE, si = seqinfo(karyogram()), verbose = T, max.chrom = 800e6){
+bfb = function(chr, numcycles = 5, w = 0.2, wd = 0.4, end = TRUE, si = gUtils::si, verbose = TRUE, max.chrom = 800e6){
     if (w<0 | wd < 0){
         stop('w and wd must be positive')
     }
@@ -2559,7 +2569,7 @@ bfb = function(chr, numcycles = 5, w = 0.2, wd = 0.4, end = TRUE, si = seqinfo(k
     
     for (i in 1:numcycles){
         if (verbose){
-            message('Cycle ', i, ' chrom width', seqlengths(seqinfo(gc)[[2]])[chr]/1e6, ' MB\n')
+            message('Cycle ', i, ' chrom width ', seqlengths(seqinfo(gc)[[2]])[chr]/1e6, ' MB\n')
         }
         si1 = seqinfo2gr(seqinfo(gc)[[2]])
         si.this = si1[chr]
@@ -2887,7 +2897,7 @@ gSubset = function(gc, xnames=NULL, ynames=NULL, x.or.y = FALSE){
 grl.split = function(grl, seqname = TRUE, strand = TRUE, values = c())
 {
     ele = tryCatch(as.data.frame(grl)$element, error = function(e) e)
-    if (inherits(ele, 'error')){
+    if (inherits(ele, 'error') | is.null(ele)){
         if (is.null(names(grl))){
             nm = 1:length(names(grl))
         } else{
@@ -3053,4 +3063,6 @@ gr.tostring = function(gr, places = 2, interval = 1e6, unit = 'MB', prefix = 'ch
     p2 = round(end(gr)/interval, places);
     return(paste(prefix, as.character(seqnames(gr)), ':', p1, '-', p2, ' ', unit, sep = ''));
 }
+
+
 
