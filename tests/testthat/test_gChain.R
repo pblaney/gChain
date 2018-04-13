@@ -633,14 +633,14 @@ test_that('testing ir2vec() works', {
 })
 
 
-## > gCat(foo1, foo2)
-## Error in c(x, list(...)) : 
-##   Error: At least one of the objects to be concatanted is not a gChain
 
 test_that('testing gCat() works', {
 
     expect_true(is(gCat(), 'gChain'))
-    expect_error(gCat(foo1, foo2)) ### shouldn't be an error
+    expect_true(is(gCat(gCat(), gCat()), 'gChain'))
+    foo1 = gChain(grl.unlist(grl1), grl.unlist(grl2)[1:500]) 
+    foo2 = gChain(example_dnase[1:200])
+    expect_true(is(gCat(foo1, foo2), 'gChain'))
 
 })
 
