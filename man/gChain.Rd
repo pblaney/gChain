@@ -4,8 +4,14 @@
 \alias{gChain}
 \title{gChain}
 \usage{
-gChain(x = NULL, y = NULL, pad.left = 0, pad.right = 0, scale = NULL,
-  val = data.frame())
+gChain(
+  x = NULL,
+  y = NULL,
+  pad.left = 0,
+  pad.right = 0,
+  scale = NULL,
+  val = data.frame()
+)
 }
 \description{
 instantiate a new gChain

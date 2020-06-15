@@ -4,8 +4,13 @@
 \alias{txChain}
 \title{txChain}
 \usage{
-txChain(grl, txname = NULL, translate = FALSE,
-  exonFrame.field = "exon_frame", val = NULL)
+txChain(
+  grl,
+  txname = NULL,
+  translate = FALSE,
+  exonFrame.field = "exon_frame",
+  val = NULL
+)
 }
 \description{
 Transcript chain

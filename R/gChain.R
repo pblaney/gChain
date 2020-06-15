@@ -70,7 +70,7 @@
 #' These interval pairs won't have widths that are integer multiples, however (for scales>1) the  (width(y)+pad.left+pad.right)/width(x) 
 #' will be an integer, or (for scales<1)  (width(x)+pad.left+pad.right)/width(y) will be an integer.
 #' 
-#' @import gUtils GenomicRanges Matrix
+#' @import gUtils GenomicRanges Matrix data.table
 #################################################################
 setClass('gChain', representation(.galx = 'GRanges', .galy = 'GRanges', .scale = 'numeric', .pad.left = 'integer', .pad.right = 'integer', values = 'data.frame', .n = 'numeric', .m = 'numeric'))
 
@@ -539,9 +539,9 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
             if (length(.Object@.galx)>0){
 
                 pval <- length(seqlevels(x)) > 50 && length(seqlevels(.Object@.galx)) > 50
-                if (verbose){
-                    print(paste('psmart is', pval))
-                }
+                ## if (verbose){
+                ##     print(paste('psmart is', pval))
+                ## }
                 ## if (!is.na(pval) && is.na(pintersect))
                 ##   hits <- gr.findoverlaps(x, .Object@.galx, verbose = verbose, ...) # pairs of matches
                 ## else
@@ -1197,7 +1197,11 @@ paChain = function(seq1, seq2,
     sn2 = NULL, ## character vector of seqnames for seq2, should  be same length as seq2
     gr1 = NULL, ## GRanges corresponding to seq1, MUST be of same width, length, and names as seq1
     gr2 = NULL, ## GRanges corresponding to seq2, MUST be of same width, length, and names as seq2  
-    pa = NULL, 
+    pa = NULL,
+    substitutionMatrix = NULL,
+#    gapOpening = 0,
+#    gapExtension = 1,
+    type = 'global', 
     verbose = TRUE,
     sl1 = NULL, ## seqlengths vector for seq1 (useful if provided seqs exist in larger set)
     sl2 = NULL, ## seqlengths vector for seq2 (useful if provdied seqs if exist in larger set)  
@@ -1210,6 +1214,11 @@ paChain = function(seq1, seq2,
     pintersect = FALSE, ## calls to gr.findoverlaps (and to lift) use pintersect. See gr.findoverlaps. Best for small genomes (e.g. reads)
     ...)
 {
+  if (!is.null(pa))
+  {
+    seq1 = pattern(pa)
+    seq2 = subject(pa)
+  }
 
     if (inherits(seq1, 'factor')){
         seq1 = as.character(seq1)
@@ -1257,7 +1266,7 @@ paChain = function(seq1, seq2,
         seq2 = AAStringSet(seq2)
     }
   
-    if (!(inherits(seq1, 'XStringSet')) | !(inherits(seq2, 'XStringSet'))){
+    if (!(inherits(seq1, 'XStringSet') | inherits(seq1, 'QualityAlignedXStringSet')) | !(inherits(seq2, 'XStringSet') | inherits(seq2, 'QualityAlignedXStringSet'))){
         stop('seq1 and seq2 arguments must be both XStringSet objects (e.g. DNAStringSet, RNAStringSet, AAStringSet).')
     }
 
@@ -1306,7 +1315,7 @@ paChain = function(seq1, seq2,
         }      
     }
 
-    if ((width(seq1)==0) | (width(seq2)==0)){
+    if ((any(width(seq1)==0)) | (any(width(seq2)==0))){
         stop("Either seq1 and/or seq2 is of width 0. This will result in an error with pairwiseAlignment(seq1, seq2).")
     }
   
@@ -1387,15 +1396,20 @@ paChain = function(seq1, seq2,
         }
 
         if (mc.cores > 1){
-            pa <- mc.pairwiseAlignment(seq1, seq2, numchunk=numchunk, mc.cores=mc.cores) ## , ...)
+          pa <- mc.pairwiseAlignment(seq1, seq2, numchunk=numchunk, mc.cores=mc.cores,
+                                     substitutionMatrix = substitutionMatrix,# gapOpening = gapOpening, gapExtension = gapExtension,
+                                     type = type
+                                     ) ## , ...)
         } else{
-            pa <- pairwiseAlignment(seq1, seq2) 
+          pa <- pairwiseAlignment(seq1, seq2,
+                                  substitutionMatrix = substitutionMatrix, # gapOpening = gapOpening, gapExtension = gapExtension,
+                                  type = type
+                                  )
         }
     }
-
   
     if (verbose) {
-        print(proc.time() - time)
+       # print(proc.time() - time)
         message('Finished aligning\nPrepping chain ..\n')
         time <- proc.time()
     }
@@ -1452,16 +1466,16 @@ paChain = function(seq1, seq2,
     }
 
     if (verbose){
-        print(proc.time() - time)
+#        print(proc.time() - time)
     }
 
     if (length(pa)==0){
         return(gChain(GRanges(seqlengths = sl1), GRanges(seqlengths = sl2)))
     }
 
-    sinfo1 = Seqinfo(seqlengths = sl1, seqnames = names(sl1))
-    sinfo2 = Seqinfo(seqlengths = sl2, seqnames = names(sl2))
-    sinfo.ali = Seqinfo(seqlengths = nchar(as.character(pa)), seqnames = as.character(1:length(pa)))
+    sinfo1 = Seqinfo(seqlengths = unname(sl1), seqnames = names(sl1))
+    sinfo2 = Seqinfo(seqlengths = unname(sl2), seqnames = names(sl2))
+    sinfo.ali = Seqinfo(seqlengths = unname(nchar(as.character(alignedPattern(pa)))), seqnames = as.character(1:length(pa)))
 
     ## deletions specify pattern gaps in alignment coordinates
     del.len = elementNROWS(deletion(pa))
@@ -1503,7 +1517,7 @@ paChain = function(seq1, seq2,
         strand = '+', seqlengths = seqlengths(sinfo2)), val = data.frame(score = score(pa[as.numeric(as.character(seqnames(subj.mapped)))])))
   
     if (verbose) {
-        print(proc.time() - time)
+#        print(proc.time() - time)
         message('Prepped chain\nMultiplying\n')
         time <- proc.time()
     }
@@ -1551,7 +1565,7 @@ paChain = function(seq1, seq2,
     }
 
     if (verbose){
-        print(proc.time() - time)
+#        print(proc.time() - time)
     }
 
   return(out)
@@ -1579,7 +1593,7 @@ paChain = function(seq1, seq2,
 #' 
 #' @export
 #' @author Marcin Imielinski
-cgChain = function(cigar, sn = NULL, verbose = TRUE){
+cgChain = function(cigar, sn = NULL, verbose = FALSE){
     
     gr = NULL;
     cig.names = NULL;
@@ -1638,7 +1652,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
     }
 
     if (verbose){
-        message('Parsing CIGARs\n')
+        message('Parsing CIGARs')
     }
 
     #suppressWarnings(cigar.s <- explodesplitCigar(cigar))
@@ -1668,8 +1682,8 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
     sl.pat <- vaggregate(sapply(seq(length(isnotd)), function(x) sum(cigar.l[[x]][isnotd[[x]]])), by = list(cig.names), FUN = max, na.rm = T) ## 3.1
        
     isnotsi = lapply(cigar.m, function(x) !(x %in% c(I,S,H))) ## 3.1
-    sinfo.ref <- Seqinfo(seqlengths = sapply(seq(length(isnotsi)), function(x) sum(cigar.l[[x]][isnotsi[[x]]])), seqnames = as.character(1:length(cigar))) # 3.1
-    sinfo.template <- Seqinfo(seqlengths = sl.pat, seqnames = names(sl.pat))        
+    sinfo.ref <- Seqinfo(seqlengths = unname(sapply(seq(length(isnotsi)), function(x) sum(cigar.l[[x]][isnotsi[[x]]]))), seqnames = as.character(1:length(cigar))) # 3.1
+    sinfo.template <- Seqinfo(seqlengths = unname(sl.pat), seqnames = names(sl.pat))        
 
     ## digest / unlist cigar some more
     cig.id    <- unlist(lapply(seq_along(cigar.l), function(x) rep(x, length(cigar.l[[x]]))))
@@ -1678,7 +1692,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
     cig.start <- levapply(cig.wid, cig.id, function(x) if (length(x)>1) cumsum(c(1, x[1:(length(x)-1)])) else return(1))
 
     if (verbose){
-        message('Preparing gChains\n')    
+        message('Preparing gChains')    
     }
 
     ##
@@ -1718,20 +1732,20 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
     tmp <- spChain(sp)
     cigar2template <- gChain(links(tmp)$x,  GRanges(cig.names[as.numeric(as.character(seqnames(links(tmp)$y)))], ranges(links(tmp)$y), strand = '+', seqlengths = seqlengths(sinfo.template)))
 
-    ## cigar2ref maps cigar to reference
+  ## cigar2ref maps cigar to reference
     ref.mapped <- setdiff(sigr.cigar, gr.ins) ## ref maps to all non-inserted and non-clipped positions in the CIGAR
     tmp = spChain(split(ref.mapped, seqnames(ref.mapped)))
     cigar2ref = gChain(links(tmp)$x, GRanges(seqnames(links(tmp)$y),
       ranges(links(tmp)$y), strand = '+', seqlengths = seqlengths(sinfo.ref)))
     
     if (verbose){
-        message('Multiplying gChains\n')
+        message('Multiplying gChains')
     }
     
     out <- cigar2template*t(cigar2ref)
 
     if (verbose){
-        message('Finalizing gChain\n')
+        message('Finalizing gChain')
     }
 
     ## if CIGAR provided as GRange on "real genome" then lift sinfo.ref onto the genome
@@ -1771,7 +1785,7 @@ cgChain = function(cigar, sn = NULL, verbose = TRUE){
 #'
 #' @export
 #' @author Marcin Imielinski
-maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### number between 0 and 1 specifying what percentage of alignments a position need to be present in in order to be retained in output coordinates
+maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0, ...  ### number between 0 and 1 specifying what percentage of alignments a position need to be present in in order to be retained in output coordinates
   )
 {
     ## will only make chain for a single alignment
@@ -1791,9 +1805,6 @@ maChain = function(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0 ### n
     }
     ## assume that pali rows represent the entire sequence
     if (is.null(grl)){
-        ## Error in validObject(.Object) : 
-        ##   invalid class “GRanges” object: 'mcols(x)' is not parallel to 'x'
-
         grl = do.call('GRangesList', lapply(pali, function(this.pali) GRanges(rownames(as.data.frame(this.pali)), IRanges(start = 1, rowSums(as.data.frame(this.pali) != '-')))))
         names(grl) = names(pali)
     }
@@ -2045,7 +2056,7 @@ copy = function(from, ## granges of source intervals
         ends[unlist(chr.ix)] = unlist(ends.l)
 
         new.genome = structure(c(seqlengths(genomeA), tmp[,2]), names = dedup(c(seqnames(genomeA), tmp[,1]), dup.string))
-        genomeB = Seqinfo(seqnames = names(new.genome), seqlengths = new.genome);
+        genomeB = Seqinfo(seqnames = unname(names(new.genome)), seqlengths = new.genome);
         
         intA = c(GRanges(seqnames(genomeA), 
             IRanges(rep(1, length(seqlengths(genomeA))), seqlengths(genomeA)), seqlengths = seqlengths(genomeA), strand = '+'),
@@ -2060,7 +2071,7 @@ copy = function(from, ## granges of source intervals
     } else {
         if (any(strand(to) == '*')){
             warning('converting some * strands in "to" to +')
-            strand(to)[which(strand(to)=='*')] = '+';
+            strand(to)[which(as.logical(strand(to)=='*'))] = '+';
         }
            
         ## vectorize
@@ -2111,7 +2122,7 @@ copy = function(from, ## granges of source intervals
         tmp = aggregate(width(from), by = list(as.character(seqnames(to))), FUN = sum)
         new.lens = structure(seqlengths(genomeA), names = seqnames(genomeA))
         new.lens[tmp[,1]] = new.lens[tmp[,1]] + tmp[,2]                
-        genomeB = Seqinfo(seqnames = names(new.lens), seqlengths = new.lens)
+        genomeB = Seqinfo(seqnames = unname(names(new.lens)), seqlengths = new.lens)
         
         ## determine loci of copied intervals in genomeB
 
@@ -2176,7 +2187,7 @@ delete = function(target) {
     tmp = aggregate(width(target), by = list(as.character(seqnames(target))), FUN = sum)
     new.lens = structure(seqlengths(genomeA), names = seqnames(genomeA))
     new.lens[tmp[,1]] = new.lens[tmp[,1]] - tmp[,2]                
-    genomeB = Seqinfo(seqnames = names(new.lens), seqlengths = new.lens)
+    genomeB = Seqinfo(seqnames = unname(names(new.lens)), seqlengths = new.lens)
   
     ## to.tile is a tiling of genomeA including intervals that will and will not be mapped to genomeB
     ## to.ix = NA means that interval WILL be mapped to genomeB
@@ -2242,7 +2253,7 @@ invert = function(target){
     tmp = aggregate(width(target), by = list(as.character(seqnames(target))), FUN = sum)
     new.lens = structure(seqlengths(genomeA), names = seqnames(genomeA))
     new.lens[tmp[,1]] = new.lens[tmp[,1]] - tmp[,2]                
-    genomeB = Seqinfo(seqnames = names(new.lens), seqlengths = new.lens)
+    genomeB = Seqinfo(seqnames = unname(names(new.lens)), seqlengths = new.lens)
 
     ## to.tile is a tiling of genomeA including intervals that will and will not be mapped to genomeB
     ## to.ix = NA means that interval WILL be mapped to genomeB
@@ -2725,7 +2736,7 @@ gCat <- function(x, ..., verbose = FALSE) {
     gr.dtx@strand <- Rle(factor(dtx$strand, levels=c('+', '-', '*')))
     df <- DataFrame(rep(1, nrow(dtx)))
     gr.dtx@elementMetadata <- df[,c()]
-    gr.dtx@seqinfo <- Seqinfo(as.character(unique(dtx$seqnames)), seqlengths=dtx$len[!duplicated(dtx$seqnames)])
+    gr.dtx@seqinfo <- Seqinfo(unname(as.character(unique(dtx$seqnames))), seqlengths=dtx$len[!duplicated(dtx$seqnames)])
   
     gr.dty <- GRanges()
     dty[, len := max(end), by='seqnames']  
@@ -2734,7 +2745,7 @@ gCat <- function(x, ..., verbose = FALSE) {
     gr.dty@strand <- Rle(factor(dty$strand, levels=c('+', '-', '*')))
     df <- DataFrame(rep(1, nrow(dty)))
     gr.dty@elementMetadata <- df[,c()]
-    gr.dty@seqinfo <- Seqinfo(as.character(unique(dty$seqnames)), seqlengths=dty$end[!duplicated(dty$seqnames)])  
+    gr.dty@seqinfo <- Seqinfo(unname(as.character(unique(dty$seqnames))), seqlengths=dty$end[!duplicated(dty$seqnames)])  
 
     pad.left  <- unlist(lapply(args, function(x) x@.pad.left))
     pad.right <- unlist(lapply(args, function(x) x@.pad.right))
@@ -2961,7 +2972,7 @@ levapply = function(x, by, FUN = 'order'){
 seqinfo2gr = function(si, strip.empty = FALSE){
     ## treat si as seqlengths if vector
     if (is(si, 'vector')){
-        si = Seqinfo(seqlengths = si, seqnames = names(si))
+        si = Seqinfo(seqlengths = unname(si), seqnames = names(si))
     } else if (!is(si, 'Seqinfo')){
         si = seqinfo(si)
     }

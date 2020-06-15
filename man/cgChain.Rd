@@ -4,7 +4,7 @@
 \alias{cgChain}
 \title{cgChain}
 \usage{
-cgChain(cigar, sn = NULL, verbose = TRUE)
+cgChain(cigar, sn = NULL, verbose = FALSE)
 }
 \description{
 cgChain (i.e. "CIGAR")

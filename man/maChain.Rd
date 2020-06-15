@@ -4,7 +4,7 @@
 \alias{maChain}
 \title{maChain}
 \usage{
-maChain(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0)
+maChain(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0, ...)
 }
 \description{
 Multiple sequence alignment chain

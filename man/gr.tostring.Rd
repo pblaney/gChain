@@ -4,8 +4,7 @@
 \alias{gr.tostring}
 \title{gr.tostring}
 \usage{
-gr.tostring(gr, places = 2, interval = 1e+06, unit = "MB",
-  prefix = "chr")
+gr.tostring(gr, places = 2, interval = 1e+06, unit = "MB", prefix = "chr")
 }
 \arguments{
 \item{gr}{\code{GRanges}}

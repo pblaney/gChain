@@ -4,11 +4,28 @@
 \alias{paChain}
 \title{paChain}
 \usage{
-paChain(seq1, seq2, sn1 = NULL, sn2 = NULL, gr1 = NULL, gr2 = NULL,
-  pa = NULL, verbose = TRUE, sl1 = NULL, sl2 = NULL,
-  score.thresh = NULL, both.strands = FALSE, keep.best = TRUE,
-  assume.dna = TRUE, mc.cores = 1, mc.chunks = mc.cores,
-  pintersect = FALSE, ...)
+paChain(
+  seq1,
+  seq2,
+  sn1 = NULL,
+  sn2 = NULL,
+  gr1 = NULL,
+  gr2 = NULL,
+  pa = NULL,
+  substitutionMatrix = NULL,
+  type = "global",
+  verbose = TRUE,
+  sl1 = NULL,
+  sl2 = NULL,
+  score.thresh = NULL,
+  both.strands = FALSE,
+  keep.best = TRUE,
+  assume.dna = TRUE,
+  mc.cores = 1,
+  mc.chunks = mc.cores,
+  pintersect = FALSE,
+  ...
+)
 }
 \description{
 Make chain from pairwiseAlignment object
