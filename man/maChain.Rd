@@ -4,12 +4,12 @@
 \alias{maChain}
 \title{maChain}
 \usage{
-maChain(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0)
+maChain(grl = NULL, pali, pad = 0, trim = TRUE, trim.thresh = 0, ...)
 }
 \description{
-multiple sequence alignment chain
+Multiple sequence alignment chain
 
-Takes input GRanges List of interval coordinates corresponding to sequences
+Takes input GRangesList of interval coordinates corresponding to sequences
 contributing to alignments in pali. 'pali' is a list of alignment matrices
 (containing letters from the original sequences and '-', '.' for gaps)
 
@@ -19,7 +19,7 @@ sapply(pali, nrow) = sapply(grl, length)
 
 trim will remove all alignment columns that have only gaps
 
-alternatively .. grl can be an XStringSet object with a "names" attribute containing
+alternatively, grl can be an XStringSet object with a "names" attribute containing
 Biostrings (eg AA or DNA) and gap ("-") characters.  Can also be a list of XStringSet objects.
 
 if grl is NULL, then it is assumed that the first (last) non gapped character in each MSA alignment entry

@@ -4,13 +4,18 @@
 \alias{txChain}
 \title{txChain}
 \usage{
-txChain(grl, txname = NULL, translate = FALSE,
-  exonFrame.field = "exon_frame", val = NULL)
+txChain(
+  grl,
+  txname = NULL,
+  translate = FALSE,
+  exonFrame.field = "exon_frame",
+  val = NULL
+)
 }
 \description{
 Transcript chain
 
-Takes a GRangesList on genomic coordinates (ie exons comprising transcripts)
+Takes a GRangesList on genomic coordinates (i.e. exons comprising transcripts)
 and creates a gChain representing mapping onto transcript (or translated protein) coordinates
 }
 \author{

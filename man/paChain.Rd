@@ -4,16 +4,33 @@
 \alias{paChain}
 \title{paChain}
 \usage{
-paChain(seq1, seq2, sn1 = NULL, sn2 = NULL, gr1 = NULL, gr2 = NULL,
-  pa = NULL, verbose = TRUE, sl1 = NULL, sl2 = NULL,
-  score.thresh = NULL, both.strands = FALSE, keep.best = TRUE,
-  assume.dna = TRUE, mc.cores = 1, mc.chunks = mc.cores,
-  pintersect = FALSE, ...)
+paChain(
+  seq1,
+  seq2,
+  sn1 = NULL,
+  sn2 = NULL,
+  gr1 = NULL,
+  gr2 = NULL,
+  pa = NULL,
+  substitutionMatrix = NULL,
+  type = "global",
+  verbose = TRUE,
+  sl1 = NULL,
+  sl2 = NULL,
+  score.thresh = NULL,
+  both.strands = FALSE,
+  keep.best = TRUE,
+  assume.dna = TRUE,
+  mc.cores = 1,
+  mc.chunks = mc.cores,
+  pintersect = FALSE,
+  ...
+)
 }
 \description{
-make chain from pairwiseAlignment object
+Make chain from pairwiseAlignment object
 
-each BSStringSet must have named sequences (otherwise names will be computed
+Each BSStringSet must have named sequences (otherwise names will be computed
 from (perfectly unique) sequences.  Each name can only map to a single sequence
 
 NOTE: if XStringSet objects are not provided, then the input is assumed to be DNA
@@ -22,7 +39,7 @@ NOTE: if XStringSet objects are not provided, then the input is assumed to be DN
 Pre-computed pa object can be also provided, but then the sequences from which the
 pa object was computed should be given as well.
 
-returns gChain with seqinfos corresponding to unique seqnames in seq1 and seq2
+Returns gChain with seqinfos corresponding to unique seqnames in seq1 and seq2
 and the interval pairs mapping those two sequences
 }
 \author{

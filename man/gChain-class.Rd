@@ -5,9 +5,7 @@
 \alias{gChain-class}
 \title{gChain-class}
 \description{
-gChain
-
-specified by pair of GRanges objects .galx and .galy, each defined on a genome (ie a Seqinfo object
+specified by pair of GRanges objects .galx and .galy, each defined on a genome (i.e. a Seqinfo object
 specifying seqlevels and seqlengths, contained inside a GRanges object).  These objects are the
 same length and each pair of ranges .galx[i], .galy[i] specifies a region of synteny on each "genome".
 

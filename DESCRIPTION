@@ -6,8 +6,7 @@ Authors@R: c(person(given = "Jeremiah", family = "Wala", role = c("aut"), email 
     person(given = "Marcin",
     family = "Imielinski", role = c("aut", "cre"), email =
     "mimielinski@nygenome.org"))
-Description: R package providing additional capabilities and speed for
-    GenomicRanges operations.
+Description: R package providing additional capabilities and speed for GenomicRanges operations.
 Remotes:
   github::mskilab/gUtils
 Depends:
@@ -15,14 +14,17 @@ Depends:
     GenomicRanges (>= 1.18),
     data.table (>= 1.9),
     Matrix,
-    rtracklayer        
+    rtracklayer, 
+    Biostrings      
 Imports:
     gUtils,
-    GenomicAlignments
+    bamUtils,
+    GenomicAlignments, 
+    gTrack
 Suggests:
     BSgenome.Hsapiens.UCSC.hg19,
     testthat,
 License: GPL-2
 BugReports: http://github.com/mskilab/gUtils/issues
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.0

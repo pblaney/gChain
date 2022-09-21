@@ -7,9 +7,9 @@
 cn(x, ...)
 }
 \description{
-a method to extract copy number from a chain mapping genome x to y
+A method to extract copy number from a chain mapping genome x to y
 
-returns a GRanges in genome x specifying the number of copies of every interval
+Returns a GRanges in genome x specifying the number of copies of every interval
 in x that are contained in y
 
 as "breaks" only goes in the "forward" direction

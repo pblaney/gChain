@@ -3,7 +3,13 @@
 \name{links}
 \alias{links}
 \title{links
+
 returns links associated with chain}
 \usage{
 links(.Object, ...)
+}
+\description{
+links
+
+returns links associated with chain
 }
