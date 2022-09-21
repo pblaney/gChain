@@ -22,7 +22,8 @@ Imports:
     gUtils,
     bamUtils,
     GenomicAlignments, 
-    gTrack
+    gTrack,
+    IRanges,
 Suggests:
     BSgenome.Hsapiens.UCSC.hg19,
     testthat,

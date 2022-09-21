@@ -30,9 +30,12 @@
 ## marcin@broadinstitute.org
 ########################
 
+#' @import gUtils GenomicRanges Matrix data.table
+#' @import bamUtils
+#' @import gTrack
+#' @import IRanges
 
 
-#################################################################
 #' @name gChain-class
 #' @title gChain-class
 #' @description
@@ -69,11 +72,6 @@
 #' 
 #' These interval pairs won't have widths that are integer multiples, however (for scales>1) the  (width(y)+pad.left+pad.right)/width(x) 
 #' will be an integer, or (for scales<1)  (width(x)+pad.left+pad.right)/width(y) will be an integer.
-#' 
-#' @import gUtils GenomicRanges Matrix data.table
-#' @import bamUtils
-#' @import gTrack
-#################################################################
 setClass('gChain', representation(.galx = 'GRanges', .galy = 'GRanges', .scale = 'numeric', .pad.left = 'integer', .pad.right = 'integer', values = 'data.frame', .n = 'numeric', .m = 'numeric'))
 
 suppressWarnings(removeMethod('show', 'gChain')) 
