@@ -635,7 +635,7 @@ setMethod('lift', signature('gChain'), function(.Object, x, format = 'GRanges', 
                   chr = NA, pos = NA, stringsAsFactors = F)
                 
                 ## identify (flattened) x indices that map to at least one y index
-                mapped.ix = ir2vec(shift(IRanges(values(out)$query.start, values(out)$query.end), query.offsets), each = x.expand);
+                mapped.ix = ir2vec(IRanges::shift(IRanges(values(out)$query.start, values(out)$query.end), query.offsets), each = x.expand);
                 unmapped.ix = setdiff(1:query.length, mapped.ix)
                 
                 ## look up y vals corresponding to mapped positions
